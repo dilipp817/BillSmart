@@ -22,6 +22,7 @@ bin/
 *.iws
 *.iml
 *.ipr
+.idea/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
@@ -38,3 +39,9 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+BOOT-INF/
+.env
+src/main/resources/db/
+*.jar
+.gradle/
