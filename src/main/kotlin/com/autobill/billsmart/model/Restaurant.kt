@@ -1,20 +1,26 @@
-package com.smart.billsmart.model
+package com.autobill.billsmart.model
 
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
+import com.smart.billsmart.model.Food
+import com.smart.billsmart.model.StoreLogo
+import jakarta.persistence.*
 
-@Component
-class Restaurant {
-    var restroId: Int = 0
-    var outletName: String? = null
-    var displayname: String? = null
-    var outletManager: String? = null
+@Entity
+@Table(name = "restaurant")
+class Restaurant(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var restroId: Long? = null,
 
-    @Autowired
-    lateinit var storeAddress: Address
+    var outletName: String = "",
+    var displayname: String = "",
+    var outletManager: String = "",
 
-    var foods: ArrayList<Food>? = null
+    @Embedded
+    var storeAddress: Address = Address(),
 
-    @Autowired
-    lateinit var storeLogo: StoreLogo
-}
+    @Transient
+    var foods: ArrayList<Food> = arrayListOf(),
+
+    @Transient
+    var storeLogo: StoreLogo = StoreLogo()
+)

@@ -1,15 +1,24 @@
-package com.smart.billsmart.model
+package com.autobill.billsmart.model
 
-import org.springframework.stereotype.Component
+import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.validation.constraints.NotBlank
 
-@Component
-class Address {
-    var building: String? = null
-    var street: String? = null
-    var storelocation: String? = null
-    var zipCode: Int = 0
+@Embeddable
+class Address(
+    @field:NotBlank
+    @Column(name = "building", nullable = false)
+    var building: String = "",
 
-    fun show() {
-        println("My address is building $building street $street")
-    }
-}
+    @field:NotBlank
+    @Column(name = "street", nullable = false)
+    var street: String = "",
+
+    @field:NotBlank
+    @Column(name = "store_location", nullable = false)
+    var storelocation: String = "",
+
+    @field:NotBlank
+    @Column(name = "zip_code", nullable = false)
+    var zipCode: String = ""
+)
