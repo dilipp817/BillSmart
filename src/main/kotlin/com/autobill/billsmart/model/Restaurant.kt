@@ -1,7 +1,5 @@
 package com.autobill.billsmart.model
 
-import com.smart.billsmart.model.Food
-import com.smart.billsmart.model.StoreLogo
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotBlank
 
@@ -27,9 +25,9 @@ class Restaurant(
     @Embedded
     var storeAddress: Address = Address(),
 
-    @Transient
-    var foods: ArrayList<Food> = arrayListOf(),
+    @OneToMany(mappedBy = "restaurant", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    var foods: MutableList<Food> = mutableListOf(),
 
-    @Transient
+    @Embedded
     var storeLogo: StoreLogo = StoreLogo()
 )

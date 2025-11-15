@@ -1,11 +1,23 @@
-package com.smart.billsmart.model
+package com.autobill.billsmart.model
 
-import org.springframework.stereotype.Component
+import jakarta.persistence.*
+import jakarta.validation.constraints.NotBlank
 
-@Component
-class Food {
-    var productId: Int = 0
-    var productName: String? = null
-    var displayname: String? = null
-    var timing: String? = null
-}
+@Entity
+@Table(name = "food")
+class Food(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+
+    @field:NotBlank
+    @Column(nullable = false)
+    var name: String = "",
+
+    @Column
+    var price: Double? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "restro_id")
+    var restaurant: Restaurant? = null
+)

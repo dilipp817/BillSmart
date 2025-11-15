@@ -1,10 +1,13 @@
-package com.smart.billsmart.model
+package com.autobill.billsmart.model
 
-import org.springframework.stereotype.Component
+import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
 
-@Component
-class StoreLogo {
-    var logoUrlSmall: String? = null
-    var logoUrlMedium: String? = null
-    var logoUrlLarge: String? = null
-}
+@Embeddable
+data class StoreLogo(
+    @Column(name = "store_logo_url")
+    var logoUrl: String = "",
+
+    @Column(name = "store_logo_media_type")
+    var mediaType: String = ""
+)
