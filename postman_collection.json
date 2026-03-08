@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "BillSmart API",
+    "description": "Collection for BillSmart Restaurant & Food APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Restaurants",
+      "item": [
+        {
+          "name": "Create Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outletName\": \"Pizza Palace\",\n  \"displayname\": \"Pizza Palace Restaurant\",\n  \"outletManager\": \"John Doe\",\n  \"storeAddress\": {\n    \"building\": \"Building A\",\n    \"street\": \"Main Street\",\n    \"storelocation\": \"Downtown\",\n    \"zipCode\": \"12345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/restaurants/create",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "create"]
+            },
+            "description": "Create a new restaurant. Save the restroId for creating foods."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Restaurant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/restaurants/get/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "get", "1"]
+            },
+            "description": "Get restaurant by ID. Replace 1 with actual restaurant ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Foods",
+      "item": [
+        {
+          "name": "Create Food - Margherita Pizza",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Margherita Pizza\",\n  \"price\": 299.99\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/restaurants/1/foods",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "1", "foods"]
+            },
+            "description": "Create a food item for restaurant ID 1. Replace 1 with your actual restaurant ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Food - Pepperoni Pizza",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pepperoni Pizza\",\n  \"price\": 349.99\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/restaurants/1/foods",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "1", "foods"]
+            },
+            "description": "Create another food item"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Food - Chicken Biryani",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chicken Biryani\",\n  \"price\": 249.50\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/restaurants/1/foods",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "1", "foods"]
+            },
+            "description": "Create another food item"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Food - Butter Chicken",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Butter Chicken\",\n  \"price\": 279.99\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/restaurants/1/foods",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "1", "foods"]
+            },
+            "description": "Create another food item"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Food - Cheese Burger",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cheese Burger\",\n  \"price\": 199.99\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/restaurants/1/foods",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "1", "foods"]
+            },
+            "description": "Create another food item"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Food",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/restaurants/1/foods/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["restaurants", "1", "foods", "1"]
+            },
+            "description": "Get a specific food item. Replace 1 with restaurant ID and second 1 with food ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "item": [
+        {
+          "name": "Create Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"gender\": \"Male\",\n  \"age\": \"30\",\n  \"salary\": \"50000\",\n  \"address\": {\n    \"building\": \"101\",\n    \"street\": \"Main Street\",\n    \"storelocation\": \"Downtown\",\n    \"zipCode\": \"12345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/create/user",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["create", "user"]
+            },
+            "description": "Create a new staff member"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+
