@@ -20,6 +20,12 @@ class FoodController(
         return ResponseEntity.status(HttpStatus.CREATED).body(saved)
     }
 
+    @GetMapping
+    fun getAllFoods(@PathVariable("restroId") restroId: Long): ResponseEntity<List<FoodResponse>> {
+        val foods = foodService.getAllFoods(restroId)
+        return ResponseEntity.ok(foods)
+    }
+
     @GetMapping("/{id}")
     fun getFood(@PathVariable("restroId") restroId: Long, @PathVariable("id") id: Long): ResponseEntity<FoodResponse> {
         val f = foodService.getFood(id) ?: return ResponseEntity.notFound().build()

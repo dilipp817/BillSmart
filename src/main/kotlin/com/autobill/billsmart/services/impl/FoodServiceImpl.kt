@@ -25,6 +25,14 @@ class FoodServiceImpl(
         return foodMapper.toResponse(saved)
     }
 
+    override fun getAllFoods(restroId: Long): List<FoodResponse> {
+        restaurantRepositoryPort.findById(restroId)
+            ?: throw IllegalArgumentException("Restaurant not found: $restroId")
+
+        val foods = foodRepositoryPort.findByRestaurantRestroId(restroId)
+        return foods.map { foodMapper.toResponse(it) }
+    }
+
     override fun getFood(id: Long): FoodResponse? =
         foodRepositoryPort.findById(id)?.let { foodMapper.toResponse(it) }
 }

@@ -24,5 +24,11 @@ class FoodRepositoryAdapter(
         if (found == null) log.debug("Food not found for id={}", id) else log.debug("Found food id={}", found.id)
         return found
     }
+
+    override fun findByRestaurantRestroId(restroId: Long): List<Food> {
+        val foods = foodRepository.findByRestaurantRestroId(restroId)
+        log.debug("Found {} foods for restaurant id={}", foods.size, restroId)
+        return foods
+    }
 }
 
