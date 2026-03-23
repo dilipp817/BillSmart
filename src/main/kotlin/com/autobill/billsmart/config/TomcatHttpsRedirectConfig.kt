@@ -34,7 +34,7 @@ class TomcatHttpsRedirectConfig(
     private fun httpConnector(redirectPort: Int): Connector {
         val connector = Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL)
         connector.scheme = "http"
-        connector.port = 8080
+        connector.port = 8081
         connector.secure = false
         connector.redirectPort = redirectPort
         return connector
