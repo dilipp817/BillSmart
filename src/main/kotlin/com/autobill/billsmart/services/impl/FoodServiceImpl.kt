@@ -2,11 +2,13 @@ package com.autobill.billsmart.services.impl
 
 import com.autobill.billsmart.dto.FoodRequest
 import com.autobill.billsmart.dto.FoodResponse
+import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.mappers.FoodMapper
 import com.autobill.billsmart.ports.FoodRepositoryPort
 import com.autobill.billsmart.ports.RestaurantRepositoryPort
 import com.autobill.billsmart.services.FoodService
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class FoodServiceImpl(
@@ -15,9 +17,10 @@ class FoodServiceImpl(
     private val foodMapper: FoodMapper
 ) : FoodService {
 
+    @Transactional
     override fun createFood(restroId: Long, req: FoodRequest): FoodResponse {
         val restaurant = restaurantRepositoryPort.findById(restroId)
-            ?: throw IllegalArgumentException("Restaurant not found: $restroId")
+            ?: throw AppException.ResourceNotFoundException("Restaurant not found: $restroId")
 
         val food = foodMapper.toFood(req)
         food.restaurant = restaurant
@@ -25,14 +28,16 @@ class FoodServiceImpl(
         return foodMapper.toResponse(saved)
     }
 
+    @Transactional(readOnly = true)
     override fun getAllFoods(restroId: Long): List<FoodResponse> {
         restaurantRepositoryPort.findById(restroId)
-            ?: throw IllegalArgumentException("Restaurant not found: $restroId")
+            ?: throw AppException.ResourceNotFoundException("Restaurant not found: $restroId")
 
         val foods = foodRepositoryPort.findByRestaurantRestroId(restroId)
         return foods.map { foodMapper.toResponse(it) }
     }
 
+    @Transactional(readOnly = true)
     override fun getFood(id: Long): FoodResponse? =
         foodRepositoryPort.findById(id)?.let { foodMapper.toResponse(it) }
 }

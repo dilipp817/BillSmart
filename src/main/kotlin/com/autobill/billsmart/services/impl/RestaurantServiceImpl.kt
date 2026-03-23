@@ -6,6 +6,7 @@ import com.autobill.billsmart.mappers.RestaurantMapper
 import com.autobill.billsmart.ports.RestaurantRepositoryPort
 import com.autobill.billsmart.services.RestaurantService
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class RestaurantServiceImpl(
@@ -13,11 +14,13 @@ class RestaurantServiceImpl(
     private val restaurantMapper: RestaurantMapper
 ) : RestaurantService {
 
+    @Transactional
     override fun createRestaurant(req: RestaurantRequest): Restaurant {
         val restaurant = restaurantMapper.toRestaurant(req)
         return restaurantRepositoryPort.save(restaurant)
     }
 
+    @Transactional(readOnly = true)
     override fun getRestaurant(id: Long): Restaurant? {
         return restaurantRepositoryPort.findById(id)
     }

@@ -42,6 +42,6 @@ out/
 
 BOOT-INF/
 .env
-src/main/resources/db/
+# Removed: src/main/resources/db/ - We need to track migrations in git!
 *.jar
 .gradle/
