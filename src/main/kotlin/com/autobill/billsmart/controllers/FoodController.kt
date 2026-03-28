@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/restaurants/{restroId}/foods")
+@RequestMapping("/api/v1/restaurants/{restroId}/foods")
 class FoodController(
     private val foodService: FoodService
 ) {
@@ -30,7 +30,7 @@ class FoodController(
     fun getFood(@PathVariable("restroId") restroId: Long, @PathVariable("id") id: Long): ResponseEntity<FoodResponse> {
         val f = foodService.getFood(id) ?: return ResponseEntity.notFound().build()
         // Optional: verify the food belongs to the requested restaurant
-        if (f.restroId != restroId) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+        if (f.restaurantId != restroId) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         return ResponseEntity.ok(f)
     }
 }

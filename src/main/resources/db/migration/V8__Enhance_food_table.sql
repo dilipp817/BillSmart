@@ -13,22 +13,12 @@ ALTER TABLE public.food ADD COLUMN IF NOT EXISTS calories INTEGER;
 ALTER TABLE public.food ADD COLUMN IF NOT EXISTS is_vegetarian BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.food ADD COLUMN IF NOT EXISTS is_spicy BOOLEAN DEFAULT FALSE;
 
--- Add foreign key to categories
-DO $$
-BEGIN
-    ALTER TABLE public.food ADD CONSTRAINT fk_food_category
-        FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Add foreign key to categories (H2-compatible)
+ALTER TABLE public.food ADD CONSTRAINT IF NOT EXISTS fk_food_category
+    FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE SET NULL;
 
--- Add check constraint for price
-DO $$
-BEGIN
-    ALTER TABLE public.food ADD CONSTRAINT check_food_price CHECK (price > 0);
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Add check constraint for price (H2-compatible)
+ALTER TABLE public.food ADD CONSTRAINT IF NOT EXISTS check_food_price CHECK (price > 0);
 
 -- Add indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_food_restaurant_available ON public.food(restro_id, is_available);

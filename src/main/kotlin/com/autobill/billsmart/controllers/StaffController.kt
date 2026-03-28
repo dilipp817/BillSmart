@@ -12,12 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/create")
+@RequestMapping("/api/v1/staff")
 class StaffController(
     private val staffService: StaffService
 ) {
 
-    @PostMapping("/user")
+    @PostMapping
     fun createUser(@Valid @RequestBody req: StaffRequest): ResponseEntity<Staff> {
         val saved = staffService.createStaff(req)
         return ResponseEntity.status(HttpStatus.CREATED).body(saved)

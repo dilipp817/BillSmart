@@ -44,14 +44,11 @@ CREATE TABLE IF NOT EXISTS public.orders (
     CONSTRAINT check_order_total CHECK (total_amount >= 0)
 );
 
--- Update table foreign key to reference orders
-DO $$
-BEGIN
-    ALTER TABLE public.tables ADD CONSTRAINT fk_tables_order
-        FOREIGN KEY (current_order_id) REFERENCES public.orders(id) ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;-- Indexes
+-- Update table foreign key to reference orders (H2-compatible)
+ALTER TABLE public.tables ADD CONSTRAINT IF NOT EXISTS fk_tables_order
+    FOREIGN KEY (current_order_id) REFERENCES public.orders(id) ON DELETE SET NULL;
+
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_orders_restaurant_status ON orders(restaurant_id, status);
 CREATE INDEX IF NOT EXISTS idx_orders_table_id ON orders(table_id);
 CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);

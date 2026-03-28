@@ -6,8 +6,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.test.context.ActiveProfiles
 
 @DataJpaTest
+@ActiveProfiles("test")
 class UserRepositoryTest @Autowired constructor(
     val userRepository: UserRepository
 ) {
@@ -21,4 +23,3 @@ class UserRepositoryTest @Autowired constructor(
         assertEquals("test@example.com", found.email)
     }
 }
-

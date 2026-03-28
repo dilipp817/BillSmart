@@ -11,14 +11,9 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS device_id VARCHAR(255);
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS device_type VARCHAR(50);
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;
 
--- Add foreign key constraint if it doesn't exist
-DO $$
-BEGIN
-    ALTER TABLE public.users ADD CONSTRAINT fk_users_restaurant
-        FOREIGN KEY (restaurant_id) REFERENCES public.restaurant(restro_id) ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Add foreign key constraint if it doesn't exist (H2-compatible)
+ALTER TABLE public.users ADD CONSTRAINT IF NOT EXISTS fk_users_restaurant
+    FOREIGN KEY (restaurant_id) REFERENCES public.restaurant(restro_id) ON DELETE SET NULL;
 
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_restaurant_id ON public.users(restaurant_id);

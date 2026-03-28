@@ -14,19 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/restaurants")
+@RequestMapping("/api/v1/restaurants")
 class RestaurantController(
     private val restaurantService: RestaurantService
 ) {
 
-    @PostMapping("/create")
+    @PostMapping
     fun createRestaurant(@Valid @RequestBody req: RestaurantRequest): ResponseEntity<Restaurant> {
         val saved = restaurantService.createRestaurant(req)
         return ResponseEntity.status(HttpStatus.CREATED).body(saved)
     }
 
-
-    @GetMapping("get/{id}")
+    @GetMapping("/{id}")
     fun getRestaurant(@PathVariable id: Long): ResponseEntity<Restaurant> {
         val restaurant = restaurantService.getRestaurant(id) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(restaurant)

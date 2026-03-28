@@ -1,0 +1,304 @@
+{
+  "info": {
+    "name": "BillSmart PHASE 1 - Auth & Foods API",
+    "description": "Collection for testing PHASE 1 Auth and Foods APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user123\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/auth/login",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login with username and password. Returns JWT token."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/auth/me",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Get current user info. Requires valid JWT token."
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{jwt_token}}\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/auth/validate",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "auth", "validate"]
+            },
+            "description": "Validate JWT token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Foods",
+      "item": [
+        {
+          "name": "Get All Foods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/foods?offset=0&limit=20&restaurantId=1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "foods"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Starting position (0-based)"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page (max 100)"
+                },
+                {
+                  "key": "restaurantId",
+                  "value": "1",
+                  "disabled": true,
+                  "description": "Filter by restaurant ID"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by category ID"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Search in food name (case-insensitive)"
+                },
+                {
+                  "key": "isVegetarian",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by vegetarian (true/false)"
+                },
+                {
+                  "key": "isSpicy",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by spicy (true/false)"
+                },
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Sort: price:asc, price:desc, name:asc, name:desc"
+                }
+              ]
+            },
+            "description": "Get all foods with offset-based pagination, filtering, and sorting. Example with search: ?offset=0&limit=20&restaurantId=1&search=pizza&sort=price:asc"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Food by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/foods/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "foods", "1"]
+            },
+            "description": "Get specific food item by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Foods by Restaurant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/foods/restaurant/1?page=0&limit=20",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "foods", "restaurant", "1"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all foods for a specific restaurant"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Food",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Margherita Pizza\",\n  \"price\": 299.99,\n  \"description\": \"Classic pizza with tomato and mozzarella\",\n  \"categoryId\": 1,\n  \"preparationTime\": 15,\n  \"allergens\": \"Gluten, Dairy\",\n  \"calories\": 250,\n  \"isVegetarian\": true,\n  \"isSpicy\": false\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/foods/restaurant/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "foods", "restaurant", "1"]
+            },
+            "description": "Create new food item for a restaurant"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/categories?restaurantId=1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "categories"],
+              "query": [
+                {
+                  "key": "restaurantId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get all categories for a restaurant"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/categories/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "categories", "1"]
+            },
+            "description": "Get specific category by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pizza\",\n  \"description\": \"Delicious pizzas\",\n  \"displayOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/categories?restaurantId=1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "categories"],
+              "query": [
+                {
+                  "key": "restaurantId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Create new category for a restaurant"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token from login response - copy it here"
+    }
+  ]
+}
+

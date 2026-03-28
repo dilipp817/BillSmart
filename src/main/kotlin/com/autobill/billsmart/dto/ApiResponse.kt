@@ -44,14 +44,3 @@ data class ErrorDetails(
     val details: Map<String, Any>? = null
 )
 
-/**
- * Paginated response wrapper
- */
-data class PaginatedResponse<T>(
-    val data: List<T>,
-    val current_page: Int,
-    val limit: Int,
-    val total: Int,
-    val has_more: Boolean
-)
-

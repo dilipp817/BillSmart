@@ -12,7 +12,7 @@ interface FoodMapper {
     @Mapping(target = "restaurant", ignore = true)
     fun toFood(req: FoodRequest): Food
 
-    // map entity -> DTO with restroId extracted
-    @Mapping(source = "restaurant.restroId", target = "restroId")
+    // map entity -> DTO with restaurantId extracted from restaurant.restroId
+    @Mapping(source = "restaurant.restroId", target = "restaurantId")
     fun toResponse(food: Food): FoodResponse
 }
