@@ -1,0 +1,276 @@
+{
+  "info": {
+    "name": "BillSmart Orders API",
+    "description": "Complete Orders API Collection for BillSmart Restaurant POS",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tableId\": 1,\n  \"notes\": \"VIP customer\",\n  \"items\": [\n    {\n      \"foodId\": 1,\n      \"quantity\": 2,\n      \"specialRequests\": \"Extra spicy\"\n    },\n    {\n      \"foodId\": 2,\n      \"quantity\": 1,\n      \"specialRequests\": \"No onions\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders"]
+            },
+            "description": "Create a new order with multiple items"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders"]
+            },
+            "description": "Retrieve all orders for a restaurant"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1"]
+            },
+            "description": "Get specific order details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/active",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "active"]
+            },
+            "description": "Get all active orders (not completed or cancelled)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/status/PENDING",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "status", "PENDING"]
+            },
+            "description": "Get orders filtered by status (PENDING, IN_PROGRESS, COMPLETED, DELIVERED, CANCELLED, HOLD)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Orders Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/count/pending",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "count", "pending"]
+            },
+            "description": "Get count of pending orders"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/range?startDate=2026-03-01T00:00:00&endDate=2026-03-31T23:59:59",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-03-01T00:00:00"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-03-31T23:59:59"
+                }
+              ]
+            },
+            "description": "Get orders within a specific date range"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Item to Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"foodId\": 3,\n  \"quantity\": 2,\n  \"specialRequests\": \"Less salt\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1/items",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1", "items"]
+            },
+            "description": "Add a new item to an existing order"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3,\n  \"specialRequests\": \"Very spicy\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1/items/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1", "items", "1"]
+            },
+            "description": "Update quantity and special requests for an item"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1/status",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1", "status"]
+            },
+            "description": "Update order status (PENDING, IN_PROGRESS, COMPLETED, DELIVERED, CANCELLED, HOLD)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Item Status",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1/items/1/status?newStatus=READY",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1", "items", "1", "status"],
+              "query": [
+                {
+                  "key": "newStatus",
+                  "value": "READY"
+                }
+              ]
+            },
+            "description": "Update individual item status (PENDING, IN_PROGRESS, READY, SERVED, CANCELLED)"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Item from Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1/items/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1", "items", "1"]
+            },
+            "description": "Remove an item from an order"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "https://localhost:8443/api/v1/restaurants/1/orders/1",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8443",
+              "path": ["api", "v1", "restaurants", "1", "orders", "1"]
+            },
+            "description": "Cancel an order"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+
