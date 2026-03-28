@@ -31,7 +31,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT t FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         ORDER BY t.tableNumber ASC
         """
     )
@@ -49,7 +49,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT t FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.status = 'AVAILABLE' 
         AND t.capacity >= :minCapacity 
         ORDER BY t.capacity ASC
@@ -71,7 +71,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT t FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.status = :status 
         ORDER BY t.tableNumber ASC
         """
@@ -92,7 +92,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT t FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.tableNumber = :tableNumber
         """
     )
@@ -112,7 +112,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT COUNT(t) > 0 FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.tableNumber = :tableNumber
         """
     )
@@ -131,7 +131,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT t FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.status = 'OCCUPIED'
         """
     )
@@ -147,7 +147,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT COUNT(t) FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.status = 'AVAILABLE'
         """
     )
@@ -164,7 +164,7 @@ interface TableRepository : JpaRepository<Table, Long> {
     @Query(
         """
         SELECT t FROM Table t 
-        WHERE t.restaurant.id = :restaurantId 
+        WHERE t.restaurant.restroId = :restaurantId 
         AND t.status IN :statuses 
         ORDER BY t.tableNumber ASC
         """

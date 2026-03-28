@@ -23,6 +23,10 @@ interface CategoryRepository : JpaRepository<Category, Long> {
     /**
      * Find category by name for a restaurant
      */
-    fun findByNameAndRestaurantRestroId(name: String, restaurantId: Long): Category?
+    @Query("SELECT c FROM Category c WHERE c.name = :name AND c.restaurant.restroId = :restaurantId")
+    fun findByNameAndRestaurantId(
+        @org.springframework.data.repository.query.Param("name") name: String,
+        @org.springframework.data.repository.query.Param("restaurantId") restaurantId: Long
+    ): Category?
 }
 

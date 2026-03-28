@@ -53,18 +53,18 @@ class CategoryServiceImpl(
             .orElseThrow { AppException.ResourceNotFoundException("Restaurant not found with ID: $restaurantId") }
 
         // Check if category name already exists for this restaurant
-        if (categoryRepository.findByNameAndRestaurantRestroId(request.name, restaurantId) != null) {
+        if (categoryRepository.findByNameAndRestaurantId(request.name, restaurantId) != null) {
             throw AppException.ConflictException("Category with name '${request.name}' already exists for this restaurant")
         }
 
-        val category = Category(
-            name = request.name,
-            description = request.description,
-            displayOrder = request.displayOrder,
-            imageUrl = request.imageUrl,
-            isActive = true,
-            restaurant = restaurant
-        )
+        val category = Category().apply {
+            this.name = request.name
+            this.description = request.description
+            this.displayOrder = request.displayOrder
+            this.imageUrl = request.imageUrl
+            this.isActive = true
+            this.restaurant = restaurant
+        }
 
         val saved = categoryRepository.save(category)
         log.info("Category created successfully with ID: {}", saved.id)

@@ -3,6 +3,7 @@ package com.autobill.billsmart.services.impl
 import com.autobill.billsmart.dto.*
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.mappers.OrderMapper
+import com.autobill.billsmart.mappers.createOrderItemFromRequest
 import com.autobill.billsmart.model.Order
 import com.autobill.billsmart.model.enums.OrderStatus
 import com.autobill.billsmart.repositories.*
@@ -77,7 +78,7 @@ class OrderServiceImpl(
                     AppException.ResourceNotFoundException("Food not found: ${itemRequest.foodId}")
                 }
 
-            val orderItem = orderMapper.toOrderItem(itemRequest, food, order)
+            val orderItem = createOrderItemFromRequest(itemRequest, food, order)
             order.items.add(orderItem)
         }
 
@@ -122,7 +123,7 @@ class OrderServiceImpl(
             quantity = request.quantity,
             specialRequests = request.specialRequests
         )
-        val orderItem = orderMapper.toOrderItem(itemRequest, food, order)
+        val orderItem = createOrderItemFromRequest(itemRequest, food, order)
         order.addItem(orderItem)
 
         val updated = orderRepository.save(order)

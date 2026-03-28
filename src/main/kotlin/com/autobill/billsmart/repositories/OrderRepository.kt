@@ -31,7 +31,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         """
         SELECT o FROM Order o 
-        WHERE o.restaurant.id = :restaurantId 
+        WHERE o.restaurant.restroId = :restaurantId 
         ORDER BY o.createdAt DESC
         """
     )
@@ -48,7 +48,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         """
         SELECT o FROM Order o 
-        WHERE o.restaurant.id = :restaurantId 
+        WHERE o.restaurant.restroId = :restaurantId 
         AND o.status = :status 
         ORDER BY o.createdAt DESC
         """
@@ -67,7 +67,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         """
         SELECT o FROM Order o 
-        WHERE o.restaurant.id = :restaurantId 
+        WHERE o.restaurant.restroId = :restaurantId 
         AND o.status NOT IN ('DELIVERED', 'CANCELLED') 
         ORDER BY o.createdAt ASC
         """
@@ -132,7 +132,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         """
         SELECT o FROM Order o 
-        WHERE o.restaurant.id = :restaurantId 
+        WHERE o.restaurant.restroId = :restaurantId 
         AND o.createdAt BETWEEN :startDate AND :endDate 
         ORDER BY o.createdAt DESC
         """
@@ -152,7 +152,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         """
         SELECT COUNT(o) FROM Order o 
-        WHERE o.restaurant.id = :restaurantId 
+        WHERE o.restaurant.restroId = :restaurantId 
         AND o.status = 'PENDING'
         """
     )
@@ -168,7 +168,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         """
         SELECT o FROM Order o 
-        WHERE o.restaurant.id = :restaurantId 
+        WHERE o.restaurant.restroId = :restaurantId 
         AND o.status IN :statuses 
         ORDER BY o.createdAt DESC
         """

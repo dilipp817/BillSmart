@@ -17,7 +17,7 @@ data class RestaurantRequest(
     @field:Size(min = 2, max = 255, message = "Manager name must be between 2 and 255 characters")
     val outletManager: String,
 
-    @field:Valid(message = "Invalid store address")
+    @field:Valid
     val storeAddress: AddressRequest
 )
 

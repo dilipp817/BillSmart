@@ -51,7 +51,7 @@ interface TableMapper {
      * @param table the table entity
      * @return table response DTO
      */
-    @Mapping(target = "restaurantId", source = "restaurant.id")
+    @Mapping(target = "restaurantId", source = "restaurant.restroId")
     @Mapping(target = "currentOrderId", source = "currentOrder.id")
     fun toResponse(table: Table): TableResponse
 

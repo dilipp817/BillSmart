@@ -20,7 +20,7 @@ interface OrderMapper {
     /**
      * Convert Order Entity to OrderResponse DTO
      */
-    @Mapping(target = "restaurantId", source = "restaurant.id")
+    @Mapping(target = "restaurantId", source = "restaurant.restroId")
     @Mapping(target = "tableId", source = "table.id")
     @Mapping(target = "tableNumber", source = "table.tableNumber")
     fun toResponse(order: Order): OrderResponse
@@ -33,9 +33,9 @@ interface OrderMapper {
     /**
      * Convert Order to OrderSummaryResponse
      */
-    @Mapping(target = "restaurantId", source = "restaurant.id")
     @Mapping(target = "tableNumber", source = "table.tableNumber")
-    @Mapping(target = "itemCount", source = "items.size")
+    @Mapping(target = "itemCount", ignore = true)
+    @Mapping(target = "totalAmount", ignore = true)
     fun toSummaryResponse(order: Order): OrderSummaryResponse?
 
     /**
@@ -51,29 +51,25 @@ interface OrderMapper {
      */
     @Suppress("unused")
     fun toItemResponses(items: List<OrderItem>): List<OrderItemResponse>
+}
 
-    /**
-     * Create OrderItem from OrderItemRequest
-     */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "order", ignore = true)
-    @Mapping(target = "food", ignore = true)
-    @Mapping(target = "subtotal", ignore = true)
-    @Mapping(target = "itemStatus", constant = "PENDING")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "version", ignore = true)
-    fun toOrderItem(request: OrderItemRequest, food: Food): OrderItem
-
-    /**
-     * Map OrderItemRequest with specific food
-     */
-    fun toOrderItem(request: OrderItemRequest, food: Food, order: Order): OrderItem {
-        val item = toOrderItem(request, food)
-        item.order = order
-        item.unitPrice = food.price?.toBigDecimal() ?: java.math.BigDecimal.ZERO
-        item.calculateSubtotal()
-        return item
+/**
+ * Helper function to create OrderItem from OrderItemRequest and related entities
+ * This is outside the mapper interface to avoid MapStruct conflicts
+ */
+fun createOrderItemFromRequest(
+    request: OrderItemRequest,
+    food: Food,
+    order: Order
+): OrderItem {
+    return OrderItem().apply {
+        this.order = order
+        this.food = food
+        this.quantity = request.quantity
+        this.unitPrice = food.price?.toBigDecimal() ?: java.math.BigDecimal.ZERO
+        this.specialRequests = request.specialRequests
+        this.itemStatus = "PENDING"
+        this.calculateSubtotal()
     }
 }
 
