@@ -29,30 +29,29 @@ class AuthServiceImpl(
     override fun login(request: LoginRequest): LoginResponse {
         log.debug("Login attempt for username: {}", request.username)
 
-        // Find user by username
         val user = userRepository.findByUsername(request.username)
-            ?: throw AppException.ResourceNotFoundException("User not found: ${request.username}")
+            ?: throw AppException.ResourceNotFoundException("Invalid username or password")
 
-        // Verify password
-        // Note: In real production, password should be hashed
-        // For now, we're doing simple comparison
-        if (user.username != request.username) {
-            log.warn("Invalid credentials for user: {}", request.username)
-            throw AppException.UnauthorizedException("Invalid credentials")
+        if (!user.isActive) {
+            log.warn("Inactive user attempted login: {}", request.username)
+            throw AppException.UnauthorizedException("Account is deactivated")
         }
 
-        // Generate JWT token
-        val role = "staff" // Default role, should come from user entity
-        val token = jwtTokenProvider.generateToken(user.username, user.id!!, role)
+        if (!passwordEncoder.matches(request.password, user.password)) {
+            log.warn("Invalid password for user: {}", request.username)
+            throw AppException.UnauthorizedException("Invalid username or password")
+        }
+
+        val token = jwtTokenProvider.generateToken(user.username, user.id!!, user.role)
         val expiresIn = jwtTokenProvider.getExpirationTimeInSeconds()
 
-        log.debug("Login successful for user: {}", request.username)
+        log.info("Login successful for user: {}", request.username)
 
         return LoginResponse(
             id = user.id!!,
             username = user.username,
             email = user.email,
-            role = role,
+            role = user.role,
             token = token,
             expiresIn = expiresIn
         )
@@ -69,8 +68,8 @@ class AuthServiceImpl(
             id = user.id!!,
             username = user.username,
             email = user.email,
-            role = "staff", // Default role
-            isActive = true // Should come from user entity
+            role = user.role,
+            isActive = user.isActive
         )
     }
 
