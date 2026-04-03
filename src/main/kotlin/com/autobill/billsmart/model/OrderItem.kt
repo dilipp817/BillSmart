@@ -9,7 +9,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
 import jakarta.persistence.Version
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -27,7 +26,7 @@ import java.time.LocalDateTime
  * Performance: Indexes on order_id for efficient queries
  */
 @Entity
-@Table(
+@jakarta.persistence.Table(
     name = "order_items",
     indexes = [
         Index(name = "idx_order_items_order", columnList = "order_id"),

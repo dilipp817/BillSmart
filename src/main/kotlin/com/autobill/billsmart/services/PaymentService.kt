@@ -51,6 +51,15 @@ interface PaymentService {
     fun getPaymentsByOrder(orderId: Long, pageable: Pageable): Page<PaymentListResponse>
 
     /**
+     * Get payments by bill (paginated)
+     *
+     * @param billId bill ID
+     * @param pageable pagination info
+     * @return page of payments
+     */
+    fun getPaymentsByBill(billId: Long, pageable: Pageable): Page<PaymentListResponse>
+
+    /**
      * Get payments by status (paginated)
      *
      * @param status payment status

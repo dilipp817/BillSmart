@@ -1,7 +1,6 @@
 package com.autobill.billsmart.model
 
 import jakarta.persistence.*
-import jakarta.persistence.Table
 import jakarta.validation.constraints.Positive
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -16,7 +15,7 @@ import java.time.LocalDateTime
  * - Optimistic locking for concurrency
  */
 @Entity
-@Table(
+@jakarta.persistence.Table(
     name = "bill_items",
     indexes = [
         Index(name = "idx_bill_items_bill_id", columnList = "bill_id"),

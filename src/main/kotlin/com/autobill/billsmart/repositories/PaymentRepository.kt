@@ -23,6 +23,11 @@ interface PaymentRepository : JpaRepository<Payment, Long> {
     fun findByBillIdOrderByCreatedAtDesc(billId: Long): List<Payment>
 
     /**
+     * Find payments by bill ID with pagination
+     */
+    fun findByBillIdOrderByCreatedAtDesc(billId: Long, pageable: Pageable): Page<Payment>
+
+    /**
      * Find payments by order ID with pagination
      */
     fun findByOrderIdOrderByCreatedAtDesc(orderId: Long, pageable: Pageable): Page<Payment>

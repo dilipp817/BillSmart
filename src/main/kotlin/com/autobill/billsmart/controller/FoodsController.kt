@@ -76,21 +76,21 @@ class FoodsController(
             // Filter by category
             if (categoryId != null && categoryId > 0) {
                 filteredFoods = filteredFoods.filter {
-                    it.id == categoryId  // In real scenario, check category_id field
+                    it.categoryId == categoryId
                 }
             }
 
             // Filter by vegetarian
             if (isVegetarian != null) {
                 filteredFoods = filteredFoods.filter {
-                    true  // Assume all available for now
+                    it.isVegetarian == isVegetarian
                 }
             }
 
             // Filter by spicy
             if (isSpicy != null) {
                 filteredFoods = filteredFoods.filter {
-                    true  // Assume all available for now
+                    it.isSpicy == isSpicy
                 }
             }
 
@@ -113,11 +113,11 @@ class FoodsController(
                         id = food.id,
                         name = food.name,
                         price = food.price,
-                        imageUrl = null,
-                        categoryName = null,
-                        isAvailable = true,
-                        isVegetarian = false,
-                        isSpicy = false
+                        imageUrl = food.imageUrl,
+                        categoryName = food.categoryName,
+                        isAvailable = food.isAvailable,
+                        isVegetarian = food.isVegetarian,
+                        isSpicy = food.isSpicy
                     )
                 }
 
@@ -193,11 +193,11 @@ class FoodsController(
                         id = food.id,
                         name = food.name,
                         price = food.price,
-                        imageUrl = null,
-                        categoryName = null,
-                        isAvailable = true,
-                        isVegetarian = false,
-                        isSpicy = false
+                        imageUrl = food.imageUrl,
+                        categoryName = food.categoryName,
+                        isAvailable = food.isAvailable,
+                        isVegetarian = food.isVegetarian,
+                        isSpicy = food.isSpicy
                     )
                 }
 

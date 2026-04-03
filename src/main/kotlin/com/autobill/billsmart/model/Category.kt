@@ -1,13 +1,12 @@
 package com.autobill.billsmart.model
 
 import jakarta.persistence.*
-import jakarta.persistence.Table
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "categories", indexes = [
+@jakarta.persistence.Table(name = "categories", indexes = [
     Index(name = "idx_categories_restaurant_id", columnList = "restaurant_id"),
     Index(name = "idx_categories_active", columnList = "is_active")
 ])

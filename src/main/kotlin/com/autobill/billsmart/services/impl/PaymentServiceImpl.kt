@@ -144,6 +144,19 @@ class PaymentServiceImpl(
     }
 
     @Transactional(readOnly = true)
+    override fun getPaymentsByBill(billId: Long, pageable: Pageable): Page<PaymentListResponse> {
+        logger.debug("Fetching payments for bill: {}", billId)
+
+        if (!billRepository.existsById(billId)) {
+            logger.error("Bill not found: {}", billId)
+            throw AppException.ResourceNotFoundException("Bill not found: $billId")
+        }
+
+        return paymentRepository.findByBillIdOrderByCreatedAtDesc(billId, pageable)
+            .map { paymentMapper.toListResponse(it) }
+    }
+
+    @Transactional(readOnly = true)
     override fun getPaymentsByStatus(status: String, pageable: Pageable): Page<PaymentListResponse> {
         logger.debug("Fetching payments by status: {}", status)
 

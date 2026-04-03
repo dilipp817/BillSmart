@@ -1,12 +1,11 @@
 package com.autobill.billsmart.model
 
 import jakarta.persistence.*
-import jakarta.persistence.Table
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 
 @Entity
-@Table(name = "staff")
+@jakarta.persistence.Table(name = "staff")
 class Staff {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

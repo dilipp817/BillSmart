@@ -218,7 +218,7 @@ class TableServiceImpl(
             // If table number is being changed, validate uniqueness
             if (table.tableNumber != request.tableNumber) {
                 if (tableRepository.existsByRestaurantIdAndTableNumber(
-                    table.restaurant?.restroId ?: throw IllegalStateException("Table has no restaurant"),
+                    table.restaurant?.restroId ?: 0,
                     request.tableNumber
                 )) {
                     throw AppException.ValidationException(
@@ -383,5 +383,6 @@ class TableServiceImpl(
             .map { it.canAcceptOrder() }
             .orElseGet { false }
     }
+
 }
 

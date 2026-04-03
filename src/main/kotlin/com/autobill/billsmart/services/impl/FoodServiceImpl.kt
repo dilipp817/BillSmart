@@ -4,40 +4,40 @@ import com.autobill.billsmart.dto.FoodRequest
 import com.autobill.billsmart.dto.FoodResponse
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.mappers.FoodMapper
-import com.autobill.billsmart.ports.FoodRepositoryPort
-import com.autobill.billsmart.ports.RestaurantRepositoryPort
+import com.autobill.billsmart.repositories.FoodRepository
+import com.autobill.billsmart.repositories.RestaurantRepository
 import com.autobill.billsmart.services.FoodService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class FoodServiceImpl(
-    private val foodRepositoryPort: FoodRepositoryPort,
-    private val restaurantRepositoryPort: RestaurantRepositoryPort,
+    private val foodRepository: FoodRepository,
+    private val restaurantRepository: RestaurantRepository,
     private val foodMapper: FoodMapper
 ) : FoodService {
 
     @Transactional
     override fun createFood(restroId: Long, req: FoodRequest): FoodResponse {
-        val restaurant = restaurantRepositoryPort.findById(restroId)
+        val restaurant = restaurantRepository.findById(restroId).orElse(null)
             ?: throw AppException.ResourceNotFoundException("Restaurant not found: $restroId")
 
         val food = foodMapper.toFood(req)
         food.restaurant = restaurant
-        val saved = foodRepositoryPort.save(food)
+        val saved = foodRepository.save(food)
         return foodMapper.toResponse(saved)
     }
 
     @Transactional(readOnly = true)
     override fun getAllFoods(restroId: Long): List<FoodResponse> {
-        restaurantRepositoryPort.findById(restroId)
+        restaurantRepository.findById(restroId).orElse(null)
             ?: throw AppException.ResourceNotFoundException("Restaurant not found: $restroId")
 
-        val foods = foodRepositoryPort.findByRestaurantRestroId(restroId)
+        val foods = foodRepository.findByRestaurantRestroId(restroId)
         return foods.map { foodMapper.toResponse(it) }
     }
 
     @Transactional(readOnly = true)
     override fun getFood(id: Long): FoodResponse? =
-        foodRepositoryPort.findById(id)?.let { foodMapper.toResponse(it) }
+        foodRepository.findById(id).orElse(null)?.let { foodMapper.toResponse(it) }
 }

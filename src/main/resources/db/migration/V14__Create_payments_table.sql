@@ -1,37 +1,42 @@
 -- V14: Create payments table
 -- Date: 2026-03-23
--- Purpose: Payment records and transaction tracking
+-- Purpose: Payment records and transaction tracking (matches Payment entity exactly)
 
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
 
     -- References
-    bill_id INTEGER NOT NULL,
+    bill_id INTEGER,
+    order_id INTEGER NOT NULL,
 
     -- Payment Details
-    transaction_id VARCHAR(100) UNIQUE,
     payment_method VARCHAR(50) NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
 
-    -- Payment Gateway
-    gateway_name VARCHAR(100),
-    gateway_transaction_id VARCHAR(255),
-    gateway_response TEXT,
+    -- Transaction identifiers
+    transaction_id VARCHAR(100),
+    reference_number VARCHAR(100) NOT NULL UNIQUE,
+
+    -- Notes
+    notes TEXT,
 
     -- Audit
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    processed_at TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
 
     -- Constraints
     CONSTRAINT fk_payments_bill FOREIGN KEY (bill_id)
         REFERENCES bills(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_payments_order FOREIGN KEY (order_id)
+        REFERENCES orders(id) ON DELETE RESTRICT,
     CONSTRAINT check_payment_amount CHECK (amount > 0)
 );
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_payments_bill_id ON payments(bill_id);
-CREATE INDEX IF NOT EXISTS idx_payments_transaction_id ON payments(transaction_id);
-CREATE INDEX IF NOT EXISTS idx_payments_created ON payments(created_at);
-
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at);
+CREATE INDEX IF NOT EXISTS idx_payments_reference_number ON payments(reference_number);
