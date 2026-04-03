@@ -4,6 +4,7 @@ import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.LoginRequest
 import com.autobill.billsmart.dto.LoginResponse
 import com.autobill.billsmart.dto.UserInfoResponse
+import com.autobill.billsmart.security.JwtTokenProvider
 import com.autobill.billsmart.services.AuthService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -19,7 +20,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = ["*"], maxAge = 3600)
 class AuthController(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val jwtTokenProvider: JwtTokenProvider
 ) {
 
     private val log = LoggerFactory.getLogger(AuthController::class.java)
@@ -50,7 +52,7 @@ class AuthController(
      * Get current user information
      * Requires JWT token in Authorization header
      *
-     * @param username Username extracted from JWT token
+     * @param authHeader Authorization header containing Bearer JWT token
      * @return UserInfoResponse with user details
      */
     @GetMapping("/me")
@@ -59,23 +61,21 @@ class AuthController(
     ): ResponseEntity<ApiResponse<UserInfoResponse>> {
         log.debug("Fetching current user info")
 
-        // Extract username from token (in real implementation, use JWT extraction)
-        val username = extractUsernameFromToken(authHeader)
-            ?: return ResponseEntity(
-                ApiResponse.error<UserInfoResponse>(
-                    "UNAUTHORIZED",
-                    "No valid token provided"
-                ),
-                HttpStatus.UNAUTHORIZED
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ApiResponse.error("UNAUTHORIZED", "Authorization header missing or invalid. Expected: Bearer <token>")
+            )
+        }
+
+        val token = authHeader.substring(7)
+        val username = jwtTokenProvider.getUsernameFromToken(token)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ApiResponse.error("UNAUTHORIZED", "Token is invalid or expired")
             )
 
         val userInfo = authService.getCurrentUser(username)
-            ?: return ResponseEntity(
-                ApiResponse.error<UserInfoResponse>(
-                    "NOT_FOUND",
-                    "User not found"
-                ),
-                HttpStatus.NOT_FOUND
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ApiResponse.error("RESOURCE_NOT_FOUND", "User not found")
             )
 
         return ResponseEntity.ok(ApiResponse.success(userInfo, "User info retrieved"))
@@ -92,38 +92,21 @@ class AuthController(
     fun validateToken(@RequestParam token: String): ResponseEntity<ApiResponse<Map<String, Any>>> {
         log.debug("Validating token")
 
-        val isValid = token.isNotEmpty() // In real implementation, validate with JwtTokenProvider
+        val username = jwtTokenProvider.getUsernameFromToken(token)
+        val userId = jwtTokenProvider.getUserIdFromToken(token)
+        val role = jwtTokenProvider.getRoleFromToken(token)
 
-        return if (isValid) {
+        return if (username != null && userId != null) {
             ResponseEntity.ok(
                 ApiResponse.success(
-                    mapOf("valid" to true),
+                    mapOf("valid" to true, "username" to username, "userId" to userId, "role" to (role ?: "staff")),
                     "Token is valid"
                 )
             )
         } else {
-            ResponseEntity(
-                ApiResponse.error<Map<String, Any>>(
-                    "INVALID_TOKEN",
-                    "Token is invalid or expired"
-                ),
-                HttpStatus.UNAUTHORIZED
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ApiResponse.error("INVALID_TOKEN", "Token is invalid or expired")
             )
         }
     }
-
-    /**
-     * Helper function to extract username from Authorization header
-     * In production, use JwtTokenProvider
-     */
-    private fun extractUsernameFromToken(authHeader: String?): String? {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return null
-        }
-
-        val token = authHeader.substring(7)
-        // In real implementation: return jwtTokenProvider.getUsernameFromToken(token)
-        return null
-    }
 }
-
