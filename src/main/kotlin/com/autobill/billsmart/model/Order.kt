@@ -46,6 +46,12 @@ class Order {
     var status: OrderStatus = OrderStatus.PENDING
 
     /**
+     * Order type: OFFLINE (dine-in) or ONLINE (delivery/takeaway)
+     */
+    @Column(name = "order_type", nullable = false, length = 20)
+    var orderType: String = "OFFLINE"
+
+    /**
      * Order number for identification (e.g., "ORD-2026-03-28-001")
      */
     @Column(nullable = false, unique = true, length = 50)

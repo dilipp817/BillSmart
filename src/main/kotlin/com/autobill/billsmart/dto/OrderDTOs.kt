@@ -20,6 +20,9 @@ data class CreateOrderRequest(
     @field:Valid
     val items: List<OrderItemRequest>,
 
+    /** OFFLINE = dine-in, ONLINE = delivery/takeaway. Defaults to OFFLINE. */
+    val orderType: String = "OFFLINE",
+
     val notes: String? = null
 )
 
@@ -67,6 +70,7 @@ data class OrderResponse(
     val tableNumber: String,
     val orderNumber: String,
     val status: OrderStatus,
+    val orderType: String,
     val items: List<OrderItemResponse>,
     val totalAmount: BigDecimal,
     val notes: String? = null,

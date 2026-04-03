@@ -68,6 +68,9 @@ class OrderServiceImpl(
         order.restaurant = restaurant
         order.table = table
         order.orderNumber = generateOrderNumber()
+        order.orderType = request.orderType.uppercase().let {
+            if (it in listOf("OFFLINE", "ONLINE")) it else "OFFLINE"
+        }
         order.notes = request.notes
 
         // Add items
