@@ -40,4 +40,24 @@ class FoodServiceImpl(
     @Transactional(readOnly = true)
     override fun getFood(id: Long): FoodResponse? =
         foodRepository.findById(id).orElse(null)?.let { foodMapper.toResponse(it) }
+
+    @Transactional(readOnly = true)
+    override fun searchFoods(
+        query: String?,
+        restaurantId: Long?,
+        categoryId: Long?,
+        isVegetarian: Boolean?,
+        isSpicy: Boolean?,
+        isAvailable: Boolean?
+    ): List<FoodResponse> {
+        val results = foodRepository.searchFoods(
+            query = query?.trim()?.ifBlank { null },
+            restaurantId = restaurantId,
+            categoryId = categoryId,
+            isVegetarian = isVegetarian,
+            isSpicy = isSpicy,
+            isAvailable = isAvailable
+        )
+        return results.map { foodMapper.toResponse(it) }
+    }
 }

@@ -150,6 +150,84 @@ class FoodsController(
     }
 
     /**
+     * GET /api/v1/foods/search
+     * Search foods by name with optional filters
+     *
+     * @param q Search keyword (matches food name, case-insensitive)
+     * @param restaurantId Filter by restaurant (optional)
+     * @param categoryId Filter by category (optional)
+     * @param isVegetarian Filter by vegetarian (optional)
+     * @param isSpicy Filter by spicy (optional)
+     * @param isAvailable Filter by availability (optional, default true)
+     * @param offset Pagination offset (default 0)
+     * @param limit Page size (default 20, max 100)
+     */
+    @GetMapping("/search")
+    fun searchFoods(
+        @RequestParam(required = false) q: String?,
+        @RequestParam(required = false) restaurantId: Long?,
+        @RequestParam(required = false) categoryId: Long?,
+        @RequestParam(required = false) isVegetarian: Boolean?,
+        @RequestParam(required = false) isSpicy: Boolean?,
+        @RequestParam(required = false) isAvailable: Boolean?,
+        @RequestParam(defaultValue = "0") @Min(0) offset: Int,
+        @RequestParam(defaultValue = "20") @Positive @Max(100) limit: Int
+    ): ResponseEntity<ApiResponse<PaginatedResponse<FoodListItem>>> {
+        log.info("Searching foods - q: {}, restaurantId: {}, offset: {}, limit: {}", q, restaurantId, offset, limit)
+
+        return try {
+            val results = foodService.searchFoods(
+                query = q,
+                restaurantId = restaurantId,
+                categoryId = categoryId,
+                isVegetarian = isVegetarian,
+                isSpicy = isSpicy,
+                isAvailable = isAvailable
+            )
+
+            val total = results.size
+            val paginatedData = results
+                .drop(offset)
+                .take(limit)
+                .map { food ->
+                    FoodListItem(
+                        id = food.id,
+                        name = food.name,
+                        price = food.price,
+                        imageUrl = food.imageUrl,
+                        categoryName = food.categoryName,
+                        isAvailable = food.isAvailable,
+                        isVegetarian = food.isVegetarian,
+                        isSpicy = food.isSpicy
+                    )
+                }
+
+            val totalPages = if (limit > 0) (total + limit - 1) / limit else 0
+            val paginationMeta = PaginationMeta(
+                currentPage = if (limit > 0) offset / limit else 0,
+                limit = limit,
+                total = total,
+                totalPages = totalPages,
+                hasNext = (offset + paginatedData.size) < total,
+                hasPrevious = offset > 0
+            )
+
+            ResponseEntity.ok(
+                ApiResponse.success(
+                    PaginatedResponse(paginatedData, paginationMeta),
+                    "Search completed successfully"
+                )
+            )
+        } catch (e: AppException) {
+            log.error("Error searching foods", e)
+            throw e
+        } catch (e: Exception) {
+            log.error("Unexpected error searching foods", e)
+            throw e
+        }
+    }
+
+    /**
      * GET /api/v1/foods/:id
      * Get food item by ID
      *

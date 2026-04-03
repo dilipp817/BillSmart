@@ -7,4 +7,16 @@ interface FoodService {
     fun createFood(restroId: Long, req: FoodRequest): FoodResponse
     fun getAllFoods(restroId: Long): List<FoodResponse>
     fun getFood(id: Long): FoodResponse?
+
+    /**
+     * Search foods with optional filters
+     */
+    fun searchFoods(
+        query: String?,
+        restaurantId: Long?,
+        categoryId: Long?,
+        isVegetarian: Boolean?,
+        isSpicy: Boolean?,
+        isAvailable: Boolean?
+    ): List<FoodResponse>
 }
