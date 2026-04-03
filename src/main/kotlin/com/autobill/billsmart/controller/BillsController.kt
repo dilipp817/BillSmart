@@ -1,10 +1,10 @@
 package com.autobill.billsmart.controller
 
 import com.autobill.billsmart.dto.*
+import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.services.BillService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
@@ -37,10 +37,11 @@ class BillsController(
      * POST /api/v1/bills - Create a new bill
      */
     @PostMapping
-    fun createBill(@Valid @RequestBody request: BillRequest): ResponseEntity<BillResponse> {
-        logger.info("Creating bill - billNumber: {}", request.billNumber)
+    fun createBill(@Valid @RequestBody request: BillRequest): ResponseEntity<ApiResponse<BillResponse>> {
+        logger.info("Creating bill for order: {}", request.orderId)
         val response = billService.createBill(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(response)
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(response, "Bill created successfully"))
     }
 
     /**
@@ -49,40 +50,39 @@ class BillsController(
     @GetMapping
     fun getAllBills(
         @RequestParam(required = false) status: String?,
-        @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC)
-        pageable: Pageable
-    ): ResponseEntity<Page<BillListResponse>> {
+        @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable
+    ): ResponseEntity<ApiResponse<List<BillListResponse>>> {
         logger.debug("Fetching bills - status: {}, page: {}", status, pageable.pageNumber)
-
-        val response = if (status != null) {
+        val page = if (status != null) {
             billService.getBillsByStatus(status, pageable)
         } else {
-            Page.empty(pageable) // Implement getAllBills in service if needed
+            org.springframework.data.domain.Page.empty(pageable)
         }
-
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(page.content, "Bills retrieved successfully"))
     }
 
     /**
      * GET /api/v1/bills/{id} - Get bill by ID
      */
     @GetMapping("/{id}")
-    fun getBillById(@PathVariable id: Long): ResponseEntity<BillResponse> {
+    fun getBillById(@PathVariable id: Long): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Fetching bill: {}", id)
         val response = billService.getBillById(id)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        return ResponseEntity.ok(ApiResponse.success(response, "Bill retrieved successfully"))
     }
 
     /**
      * GET /api/v1/bills/number/{billNumber} - Get bill by number
      */
     @GetMapping("/number/{billNumber}")
-    fun getBillByNumber(@PathVariable billNumber: String): ResponseEntity<BillResponse> {
+    fun getBillByNumber(@PathVariable billNumber: String): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Fetching bill by number: {}", billNumber)
         val response = billService.getBillByNumber(billNumber)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found: $billNumber"))
+        return ResponseEntity.ok(ApiResponse.success(response, "Bill retrieved successfully"))
     }
 
     /**
@@ -92,33 +92,36 @@ class BillsController(
     fun updateBill(
         @PathVariable id: Long,
         @Valid @RequestBody request: BillRequest
-    ): ResponseEntity<BillResponse> {
+    ): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Updating bill: {}", id)
         val response = billService.updateBill(id, request)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        return ResponseEntity.ok(ApiResponse.success(response, "Bill updated successfully"))
     }
 
     /**
      * PATCH /api/v1/bills/{id}/paid - Mark bill as paid
      */
     @PatchMapping("/{id}/paid")
-    fun markBillAsPaid(@PathVariable id: Long): ResponseEntity<BillResponse> {
+    fun markBillAsPaid(@PathVariable id: Long): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Marking bill as paid: {}", id)
         val response = billService.markBillAsPaid(id)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        return ResponseEntity.ok(ApiResponse.success(response, "Bill marked as paid"))
     }
 
     /**
      * PATCH /api/v1/bills/{id}/cancel - Cancel bill
      */
     @PatchMapping("/{id}/cancel")
-    fun cancelBill(@PathVariable id: Long): ResponseEntity<BillResponse> {
+    fun cancelBill(@PathVariable id: Long): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Cancelling bill: {}", id)
         val response = billService.cancelBill(id)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        return ResponseEntity.ok(ApiResponse.success(response, "Bill cancelled successfully"))
     }
 
     /**
@@ -128,11 +131,13 @@ class BillsController(
     fun addBillItems(
         @PathVariable id: Long,
         @Valid @RequestBody items: List<BillItemRequest>
-    ): ResponseEntity<BillResponse> {
+    ): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Adding {} items to bill: {}", items.size, id)
         val response = billService.addBillItems(id, items)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.status(HttpStatus.CREATED).body(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(response, "Items added to bill successfully"))
     }
 
     /**
@@ -142,21 +147,42 @@ class BillsController(
     fun removeBillItem(
         @PathVariable id: Long,
         @PathVariable itemId: Long
-    ): ResponseEntity<BillResponse> {
+    ): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Removing item {} from bill: {}", itemId, id)
         val response = billService.removeBillItem(id, itemId)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(response)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        return ResponseEntity.ok(ApiResponse.success(response, "Item removed from bill successfully"))
     }
 
     /**
      * DELETE /api/v1/bills/{id} - Delete bill
      */
     @DeleteMapping("/{id}")
-    fun deleteBill(@PathVariable id: Long): ResponseEntity<Void> {
+    fun deleteBill(@PathVariable id: Long): ResponseEntity<ApiResponse<String>> {
         logger.info("Deleting bill: {}", id)
         val deleted = billService.deleteBill(id)
-        return if (deleted) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
+        return if (deleted)
+            ResponseEntity.ok(ApiResponse.success("Bill deleted successfully", "Bill removed"))
+        else
+            ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+    }
+
+    private fun <T> handleAppException(e: AppException): ResponseEntity<ApiResponse<T>> {
+        return when (e) {
+            is AppException.ResourceNotFoundException ->
+                ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("RESOURCE_NOT_FOUND", e.message ?: "Not found"))
+            is AppException.ValidationException ->
+                ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("VALIDATION_ERROR", e.message ?: "Validation failed"))
+            is AppException.ConflictException ->
+                ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("CONFLICT", e.message ?: "Conflict"))
+            else ->
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("INTERNAL_ERROR", "Internal server error"))
+        }
     }
 }
-
