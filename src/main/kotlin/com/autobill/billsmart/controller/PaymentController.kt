@@ -3,6 +3,7 @@ package com.autobill.billsmart.controller
 import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.PaymentRequest
 import com.autobill.billsmart.dto.PaymentResponse
+import com.autobill.billsmart.dto.PaymentStatusUpdateRequest
 import com.autobill.billsmart.services.PaymentService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
@@ -324,6 +325,128 @@ class PaymentController(
                 ApiResponse(
                     success = false,
                     message = e.message ?: "Error fetching payments"
+                )
+            )
+        }
+    }
+
+    /**
+     * Update payment status
+     *
+     * HTTP Method: PATCH
+     * Endpoint: /api/v1/payments/{id}/status
+     * Authentication: Required
+     *
+     * Use this to transition a payment through its lifecycle:
+     * PENDING → SUCCESS  (payment confirmed)
+     * PENDING → FAILED   (payment failed)
+     * SUCCESS → REFUNDED (refund issued)
+     *
+     * When status is set to SUCCESS, the linked bill is automatically marked as PAID.
+     *
+     * @param id payment ID
+     * @param request status update request with new status and optional transaction ID
+     * @return updated payment response
+     */
+    @PatchMapping("/{id}/status")
+    fun updatePaymentStatus(
+        @PathVariable @Min(1) id: Long,
+        @RequestBody request: PaymentStatusUpdateRequest
+    ): ResponseEntity<ApiResponse<PaymentResponse?>> {
+        logger.info("Updating payment status: id=$id, newStatus=${request.status}")
+
+        return try {
+            val payment = paymentService.updatePaymentStatus(id, request)
+            ResponseEntity.ok(
+                ApiResponse(
+                    success = true,
+                    message = "Payment status updated to ${request.status}",
+                    data = payment
+                )
+            )
+        } catch (e: Exception) {
+            logger.error("Error updating payment status", e)
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ApiResponse(
+                    success = false,
+                    message = e.message ?: "Error updating payment status"
+                )
+            )
+        }
+    }
+
+    /**
+     * Process payment (shortcut to mark as SUCCESS)
+     *
+     * HTTP Method: PATCH
+     * Endpoint: /api/v1/payments/{id}/process
+     * Authentication: Required
+     *
+     * Convenience endpoint — equivalent to PATCH /status with { "status": "SUCCESS" }
+     * Automatically marks the linked bill as PAID.
+     *
+     * @param id payment ID
+     * @return updated payment response
+     */
+    @PatchMapping("/{id}/process")
+    fun processPayment(
+        @PathVariable @Min(1) id: Long
+    ): ResponseEntity<ApiResponse<PaymentResponse?>> {
+        logger.info("Processing payment: $id")
+
+        return try {
+            val payment = paymentService.processPayment(id)
+            ResponseEntity.ok(
+                ApiResponse(
+                    success = true,
+                    message = "Payment processed successfully",
+                    data = payment
+                )
+            )
+        } catch (e: Exception) {
+            logger.error("Error processing payment", e)
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ApiResponse(
+                    success = false,
+                    message = e.message ?: "Error processing payment"
+                )
+            )
+        }
+    }
+
+    /**
+     * Refund payment
+     *
+     * HTTP Method: PATCH
+     * Endpoint: /api/v1/payments/{id}/refund
+     * Authentication: Required
+     *
+     * Only SUCCESS payments can be refunded.
+     *
+     * @param id payment ID
+     * @return updated payment response
+     */
+    @PatchMapping("/{id}/refund")
+    fun refundPayment(
+        @PathVariable @Min(1) id: Long
+    ): ResponseEntity<ApiResponse<PaymentResponse?>> {
+        logger.info("Refunding payment: $id")
+
+        return try {
+            val payment = paymentService.refundPayment(id)
+            ResponseEntity.ok(
+                ApiResponse(
+                    success = true,
+                    message = "Payment refunded successfully",
+                    data = payment
+                )
+            )
+        } catch (e: Exception) {
+            logger.error("Error refunding payment", e)
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ApiResponse(
+                    success = false,
+                    message = e.message ?: "Error refunding payment"
                 )
             )
         }
