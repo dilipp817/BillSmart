@@ -83,7 +83,8 @@ class BillServiceImpl(
 
         // Create bill entity
         val bill = Bill().apply {
-            this.billNumber = request.billNumber
+            this.billNumber = request.billNumber?.takeIf { it.isNotBlank() }
+                ?: generateBillNumber(restaurant.restroId!!)
             this.order = order
             this.restaurant = restaurant
             this.subtotal = request.subtotal
@@ -296,6 +297,74 @@ class BillServiceImpl(
 
     private fun isValidBillStatus(status: String): Boolean {
         return status in listOf("ISSUED", "PAID", "CANCELLED")
+    }
+
+    /**
+     * Auto-generate a unique bill number.
+     * Pattern: BILL-{restaurantId}-{yyyyMMdd}-{sequence}
+     * Example: BILL-1-20260404-0001
+     */
+    private fun generateBillNumber(restaurantId: Long): String {
+        val today = java.time.LocalDate.now()
+        val dateStr = today.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val year = today.year
+        val lastBillNumber = billRepository.findLastBillNumberByYear(year)
+        val sequence = if (lastBillNumber != null) {
+            val parts = lastBillNumber.split("-")
+            val lastSeq = parts.lastOrNull()?.toIntOrNull() ?: 0
+            lastSeq + 1
+        } else {
+            1
+        }
+        return "BILL-$restaurantId-$dateStr-${sequence.toString().padStart(4, '0')}"
+    }
+
+    /**
+     * Auto-generate a bill for an order.
+     * Calculates subtotal from order items, applies 18% GST (9% CGST + 9% SGST).
+     */
+    override fun generateBillForOrder(orderId: Long, discountAmount: BigDecimal): BillResponse {
+        logger.debug("Auto-generating bill for order: {}", orderId)
+
+        val order = orderRepository.findById(orderId)
+            .orElseThrow {
+                logger.error("Order not found: {}", orderId)
+                AppException.ResourceNotFoundException("Order not found: $orderId")
+            }
+
+        val restaurant = order.restaurant
+            ?: throw AppException.ValidationException("Order has no linked restaurant")
+
+        // Prevent duplicate bills
+        if (billRepository.existsByOrderId(orderId)) {
+            logger.warn("Bill already exists for order: {}", orderId)
+            throw AppException.ConflictException("A bill already exists for order: $orderId")
+        }
+
+        // Calculate amounts from order items
+        val subtotal = order.totalAmount
+        val taxes = calculateTaxes(subtotal)
+        val totalAmount = subtotal + taxes.totalTax - discountAmount
+
+        // Auto-generate bill number
+        val billNumber = generateBillNumber(restaurant.restroId!!)
+
+        val bill = Bill().apply {
+            this.billNumber = billNumber
+            this.order = order
+            this.restaurant = restaurant
+            this.subtotal = subtotal
+            this.taxAmount = taxes.totalTax
+            this.cgstAmount = taxes.cgst
+            this.sgstAmount = taxes.sgst
+            this.discountAmount = discountAmount
+            this.totalAmount = totalAmount
+            this.status = "ISSUED"
+        }
+
+        val saved = billRepository.save(bill)
+        logger.info("Bill auto-generated: billNumber={}, total={}", saved.billNumber, saved.totalAmount)
+        return billMapper.toResponse(saved)
     }
 
     /**

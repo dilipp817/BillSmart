@@ -101,5 +101,16 @@ interface BillService {
      * @return updated bill response
      */
     fun removeBillItem(billId: Long, itemId: Long): BillResponse?
+
+    /**
+     * Auto-generate a bill for an order.
+     * Backend calculates subtotal, CGST (9%), SGST (9%), total.
+     * Bill number is auto-generated. No manual calculation needed by client.
+     *
+     * @param orderId order ID
+     * @param discountAmount optional discount (default 0)
+     * @return generated bill response
+     */
+    fun generateBillForOrder(orderId: Long, discountAmount: java.math.BigDecimal = java.math.BigDecimal.ZERO): BillResponse
 }
 

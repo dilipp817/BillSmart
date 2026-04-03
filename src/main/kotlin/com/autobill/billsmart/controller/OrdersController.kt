@@ -3,6 +3,7 @@ package com.autobill.billsmart.controller
 import com.autobill.billsmart.dto.*
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.model.enums.OrderStatus
+import com.autobill.billsmart.services.BillService
 import com.autobill.billsmart.services.OrderService
 import org.slf4j.LoggerFactory
 import org.springframework.format.annotation.DateTimeFormat
@@ -12,6 +13,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 /**
@@ -28,7 +30,8 @@ import java.time.LocalDateTime
 @RequestMapping("/api/v1/restaurants/{restaurantId}/orders")
 @Validated
 class OrdersController(
-    private val orderService: OrderService
+    private val orderService: OrderService,
+    private val billService: BillService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -399,6 +402,62 @@ class OrdersController(
     }
 
     // ==================== EXCEPTION HANDLING ====================
+
+    /**
+     * Auto-generate a bill for an order — no manual calculation needed.
+     * Backend computes subtotal from order items, applies 18% GST (9% CGST + 9% SGST).
+     * Bill number is auto-generated as BILL-{restaurantId}-{yyyyMMdd}-{seq}.
+     *
+     * POST /api/v1/restaurants/{restaurantId}/orders/{orderId}/generate-bill
+     */
+    @PostMapping("/{orderId}/generate-bill")
+    fun generateBill(
+        @PathVariable _restaurantId: Long,
+        @PathVariable @Positive orderId: Long,
+        @RequestParam(required = false, defaultValue = "0") discount: BigDecimal
+    ): ResponseEntity<ApiResponse<BillResponse>> {
+        logger.info("POST: Generate bill for order: {}, discount: {}", orderId, discount)
+
+        return try {
+            val bill = billService.generateBillForOrder(orderId, discount)
+            ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(bill, "Bill generated successfully"))
+        } catch (e: AppException) {
+            logger.error("Error generating bill: {}", e.message)
+            handleAppException(e)
+        }
+    }
+
+    /**
+     * Search orders by order number, table number, or status keyword.
+     *
+     * GET /api/v1/restaurants/{restaurantId}/orders/search?q=ORD-20260404
+     */
+    @GetMapping("/search")
+    fun searchOrders(
+        @PathVariable restaurantId: Long,
+        @RequestParam q: String
+    ): ResponseEntity<ApiResponse<OrderListResponse>> {
+        logger.info("GET: Search orders - restaurant: {}, q: {}", restaurantId, q)
+
+        return try {
+            val allOrders = orderService.getOrdersByRestaurant(restaurantId)
+            val matched = allOrders.filter { order ->
+                order.orderNumber.contains(q, ignoreCase = true) ||
+                order.tableNumber.contains(q, ignoreCase = true) ||
+                order.status.name.contains(q, ignoreCase = true)
+            }
+            ResponseEntity.ok(
+                ApiResponse.success(
+                    OrderListResponse(orders = matched, total = matched.size.toLong()),
+                    "Search completed successfully"
+                )
+            )
+        } catch (e: AppException) {
+            logger.error("Error searching orders: {}", e.message)
+            handleAppException(e)
+        }
+    }
 
     /**
      * Handle AppException and convert to appropriate HTTP response

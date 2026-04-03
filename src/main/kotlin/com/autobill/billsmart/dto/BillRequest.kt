@@ -1,6 +1,5 @@
 package com.autobill.billsmart.dto
 
-import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -9,8 +8,8 @@ import java.time.LocalDateTime
  * BillRequest - DTO for creating/updating bills
  */
 data class BillRequest(
-    @field:NotBlank(message = "Bill number is required")
-    val billNumber: String,
+    /** Optional — if not provided, server auto-generates using pattern BILL-{restaurantId}-{yyyyMMdd}-{seq} */
+    val billNumber: String? = null,
 
     @field:Positive(message = "Order ID must be positive")
     val orderId: Long,
