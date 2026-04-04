@@ -3,20 +3,50 @@ package com.autobill.billsmart.config
 import com.autobill.billsmart.model.User
 import com.autobill.billsmart.repositories.UserRepository
 import org.slf4j.LoggerFactory
-import org.springframework.boot.CommandLineRunner
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
+import org.springframework.boot.ApplicationArguments
+import org.springframework.boot.ApplicationRunner
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Component
 
-@Configuration
-@Profile("dev")
-class DataInitializer {
-    private val log = LoggerFactory.getLogger(DataInitializer::class.java)
+/**
+ * DataInitializer — runs on every startup, idempotent.
+ * Seeds default users with BCrypt-encoded passwords if they don't exist.
+ *
+ * TEST CREDENTIALS:
+ *   admin  / admin123  (role: admin)
+ *   staff1 / staff123  (role: staff)
+ *   staff2 / staff123  (role: staff)
+ */
+@Component
+class DataInitializer(
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder
+) : ApplicationRunner {
 
-    @Bean
-    fun init(repository: UserRepository) = CommandLineRunner {
-        repository.save(User(username = "admin", email = "admin@example.com"))
-        val users = repository.findAll()
-        log.info("Users in DB at startup: {}", users)
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    data class SeedUser(val username: String, val email: String, val rawPassword: String, val role: String)
+
+    private val seedUsers = listOf(
+        SeedUser("admin",  "admin@billsmart.com",  "admin123", "admin"),
+        SeedUser("staff1", "staff1@billsmart.com", "staff123", "staff"),
+        SeedUser("staff2", "staff2@billsmart.com", "staff123", "staff")
+    )
+
+    override fun run(args: ApplicationArguments) {
+        seedUsers.forEach { seed ->
+            if (userRepository.findByUsername(seed.username) == null) {
+                userRepository.save(User(
+                    username = seed.username,
+                    email = seed.email,
+                    password = passwordEncoder.encode(seed.rawPassword),
+                    role = seed.role,
+                    isActive = true
+                ))
+                log.info("Seeded user: {} (role: {})", seed.username, seed.role)
+            } else {
+                log.debug("User already exists, skipping: {}", seed.username)
+            }
+        }
     }
 }
