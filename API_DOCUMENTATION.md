@@ -2,7 +2,7 @@
 
 **Base URL:** `http://localhost:8080`  
 **API Version:** v1  
-**Date:** April 3, 2026  
+**Date:** April 4, 2026 (updated after mobile team review)  
 **Prefix:** All endpoints start with `/api/v1/`
 
 ---
@@ -109,7 +109,7 @@ Authorization: Bearer <token>
 ---
 
 ### POST `/api/v1/auth/validate`
-Validate a JWT token.
+Validate a JWT token and return user info if valid.
 
 **Query Param:** `?token=<jwt_token>`
 
@@ -119,7 +119,21 @@ Validate a JWT token.
   "success": true,
   "message": "Token is valid",
   "data": {
-    "valid": true
+    "valid": true,
+    "username": "admin",
+    "userId": 1,
+    "role": "staff"
+  }
+}
+```
+
+**Error Response `401 UNAUTHORIZED`:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Token is invalid or expired"
   }
 }
 ```
@@ -386,6 +400,51 @@ Delete a category.
 
 ---
 
+### GET `/api/v1/categories/{id}/foods`
+Get all foods belonging to a specific category (paginated).
+
+**Path Param:** `id` — Category ID
+
+**Query Params:**
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `offset` | Int | No | `0` | Pagination offset |
+| `limit` | Int | No | `20` | Page size (max 100) |
+
+**Success Response `200 OK`:**
+```json
+{
+  "success": true,
+  "message": "Foods for category retrieved successfully",
+  "data": {
+    "data": [
+      {
+        "id": 1,
+        "name": "Margherita Pizza",
+        "price": 299.0,
+        "imageUrl": "https://cdn.example.com/pizza.jpg",
+        "categoryName": "Pizza",
+        "isAvailable": true,
+        "isVegetarian": true,
+        "isSpicy": false
+      }
+    ],
+    "pagination": {
+      "currentPage": 0,
+      "limit": 20,
+      "total": 8,
+      "totalPages": 1,
+      "hasNext": false,
+      "hasPrevious": false
+    }
+  }
+}
+```
+
+**Error `404`:** Category not found
+
+---
+
 ## 🪑 Tables
 
 > Base URL: `/api/v1/restaurants/{restaurantId}/tables`
@@ -549,6 +608,7 @@ Create a new order for a table.
 ```json
 {
   "tableId": 1,
+  "orderType": "OFFLINE",
   "items": [
     {
       "foodId": 3,
@@ -570,6 +630,7 @@ Create a new order for a table.
 - `items` — required, at least 1 item
 - `items[].foodId` — required
 - `items[].quantity` — required, must be > 0
+- `orderType` — optional, `OFFLINE` (dine-in) or `ONLINE` (delivery/takeaway), default `OFFLINE`
 
 **What happens internally:**
 1. Validates restaurant exists
@@ -594,6 +655,7 @@ Create a new order for a table.
     "tableNumber": "T-01",
     "orderNumber": "ORD-20260328-0001",
     "status": "PENDING",
+    "orderType": "OFFLINE",
     "items": [
       {
         "id": 1,
@@ -767,15 +829,77 @@ Cancel an order.
 
 ---
 
+### POST `/api/v1/restaurants/{restaurantId}/orders/{orderId}/generate-bill`
+**Auto-generate a bill for an order. No manual tax calculation needed.**
+
+Backend computes:
+- `subtotal` — from order items total
+- `cgstAmount` — 9% of subtotal
+- `sgstAmount` — 9% of subtotal
+- `taxAmount` — 18% of subtotal
+- `totalAmount` — subtotal + tax - discount
+- `billNumber` — auto-generated as `BILL-{restaurantId}-{yyyyMMdd}-{seq}`
+
+**Query Param:** `?discount=50.00` (optional, default `0`)
+
+> ⚠️ Fails with `409 CONFLICT` if a bill already exists for this order.
+
+**Success Response `201 Created`:**
+```json
+{
+  "success": true,
+  "message": "Bill generated successfully",
+  "data": {
+    "id": 1,
+    "billNumber": "BILL-1-20260404-0001",
+    "orderId": 1,
+    "restaurantId": 1,
+    "subtotal": 598.00,
+    "cgstAmount": 53.82,
+    "sgstAmount": 53.82,
+    "taxAmount": 107.64,
+    "discountAmount": 0.00,
+    "totalAmount": 705.64,
+    "status": "ISSUED",
+    "createdAt": "2026-04-04T20:30:00",
+    "updatedAt": "2026-04-04T20:30:00"
+  }
+}
+```
+
+---
+
+### GET `/api/v1/restaurants/{restaurantId}/orders/search`
+Search orders by order number, table number, or status.
+
+**Query Param:** `?q=ORD-20260404` (required)
+
+**Example:** `GET /api/v1/restaurants/1/orders/search?q=T-01`
+
+**Success Response `200 OK`:**
+```json
+{
+  "success": true,
+  "message": "Search completed successfully",
+  "data": {
+    "orders": [ /* matching OrderResponse list */ ],
+    "total": 2,
+    "status": "success"
+  }
+}
+```
+
+---
+
 ## 🧾 Bills
 
 ### POST `/api/v1/bills`
-Create a bill for an order.
+Create a bill manually. **Recommended alternative:** use `POST /orders/{orderId}/generate-bill` which auto-calculates all tax.
 
 **Request Body:**
 ```json
 {
-  "billNumber": "BILL-20260328-0001",
+  "billNumber": "BILL-1-20260404-0001",
   "orderId": 1,
   "restaurantId": 1,
   "subtotal": 598.00,
@@ -788,43 +912,40 @@ Create a bill for an order.
 }
 ```
 
+> `billNumber` is **optional** — if not provided, server auto-generates: `BILL-{restaurantId}-{yyyyMMdd}-{seq}` e.g. `BILL-1-20260404-0001`
+
 **Tax Info:** 18% GST split as 9% CGST + 9% SGST
 
 **Validation:**
-- `billNumber` — required, unique
 - `orderId` — required, order must exist, cannot already have a bill
 - `totalAmount` — must be > 0
 
 **Bill Status Values:** `ISSUED`, `PAID`, `CANCELLED`
 
-**What happens internally:**
-1. Validates order exists
-2. Validates restaurant exists
-3. Checks no bill already exists for this order (prevents duplicates)
-4. Saves bill with ISSUED status
-
 **Success Response `201 Created`:**
 ```json
 {
-  "id": 1,
-  "billNumber": "BILL-20260328-0001",
-  "orderId": 1,
-  "restaurantId": 1,
-  "restaurantName": "Pizza Palace",
-  "subtotal": 598.00,
-  "taxAmount": 107.64,
-  "cgstAmount": 53.82,
-  "sgstAmount": 53.82,
-  "discountAmount": 0.00,
-  "totalAmount": 705.64,
-  "status": "ISSUED",
-  "billItems": [],
-  "createdAt": "2026-03-28T20:30:00",
-  "updatedAt": "2026-03-28T20:30:00"
+  "success": true,
+  "message": "Bill created successfully",
+  "data": {
+    "id": 1,
+    "billNumber": "BILL-1-20260404-0001",
+    "orderId": 1,
+    "restaurantId": 1,
+    "restaurantName": "Pizza Palace",
+    "subtotal": 598.00,
+    "taxAmount": 107.64,
+    "cgstAmount": 53.82,
+    "sgstAmount": 53.82,
+    "discountAmount": 0.00,
+    "totalAmount": 705.64,
+    "status": "ISSUED",
+    "billItems": [],
+    "createdAt": "2026-04-04T20:30:00",
+    "updatedAt": "2026-04-04T20:30:00"
+  }
 }
 ```
-
-> ⚠️ Note: Bills endpoint returns raw DTO (not wrapped in ApiResponse envelope)
 
 ---
 
@@ -918,10 +1039,7 @@ Delete a bill permanently.
 ### POST `/api/v1/payments`
 Process a payment for a bill/order.
 
-**Request Header (optional):**
-```
-X-Idempotency-Key: <uuid>
-```
+> **Idempotency:** Use a unique `referenceNumber` per payment. If a payment with the same `referenceNumber` already succeeded, the existing payment is returned — no duplicate charge. `X-Idempotency-Key` header is **not used**.
 
 **Request Body:**
 ```json
@@ -1027,6 +1145,86 @@ Get all payments for a specific order (paginated).
 
 ---
 
+### PATCH `/api/v1/payments/{id}/status`
+Update payment status. Use this to transition a payment through its lifecycle.
+
+**Valid transitions:**
+- `PENDING` → `SUCCESS` (payment confirmed)
+- `PENDING` → `FAILED` (payment failed)
+- `SUCCESS` → `REFUNDED` (refund issued)
+
+> When status is set to `SUCCESS`, the linked bill is **automatically marked as `PAID`**.
+
+**Request Body:**
+```json
+{
+  "status": "SUCCESS",
+  "transactionId": "TXN-HDFC-9823741",
+  "notes": "Confirmed via bank"
+}
+```
+
+**Validation:**
+- `status` — required: `SUCCESS`, `FAILED`, `REFUNDED`
+- `transactionId` — optional, updates existing value
+- `notes` — optional
+
+**Success Response `200 OK`:**
+```json
+{
+  "success": true,
+  "message": "Payment status updated to SUCCESS",
+  "data": {
+    "id": 1,
+    "status": "SUCCESS",
+    "billId": 1,
+    "orderId": 1,
+    "amount": 705.64,
+    "paymentMethod": "CARD",
+    "referenceNumber": "REF-20260328-001",
+    "transactionId": "TXN-HDFC-9823741",
+    "createdAt": "2026-04-04T20:35:00",
+    "updatedAt": "2026-04-04T20:36:00"
+  }
+}
+```
+
+---
+
+### PATCH `/api/v1/payments/{id}/process`
+Shortcut to mark a payment as `SUCCESS` in one call.
+
+> Equivalent to `PATCH /status` with `{ "status": "SUCCESS" }`.  
+> Automatically marks the linked bill as `PAID`.  
+> Only works when payment is in `PENDING` status.
+
+**Success Response `200 OK`:**
+```json
+{
+  "success": true,
+  "message": "Payment processed successfully",
+  "data": { /* full PaymentResponse with status: SUCCESS */ }
+}
+```
+
+---
+
+### PATCH `/api/v1/payments/{id}/refund`
+Mark a payment as `REFUNDED`.
+
+> Only works when payment is in `SUCCESS` status.
+
+**Success Response `200 OK`:**
+```json
+{
+  "success": true,
+  "message": "Payment refunded successfully",
+  "data": { /* full PaymentResponse with status: REFUNDED */ }
+}
+```
+
+---
+
 ## 🗄️ Data Storage — How It Works
 
 ### Database: PostgreSQL
@@ -1120,7 +1318,7 @@ restaurant (1)
 
 4. Customer sits — create order
    POST /api/v1/restaurants/1/orders
-     { tableId, items: [{foodId, quantity}] }
+     { tableId, orderType: "OFFLINE", items: [{foodId, quantity}] }
 
 5. Kitchen updates
    PATCH /api/v1/restaurants/1/orders/{orderId}/status
@@ -1129,37 +1327,100 @@ restaurant (1)
 6. Add more items if needed
    POST /api/v1/restaurants/1/orders/{orderId}/items
 
-7. Generate bill
-   POST /api/v1/bills
-     { orderId, subtotal, taxAmount, cgstAmount, sgstAmount, totalAmount }
+7. Generate bill (backend auto-calculates all tax)
+   POST /api/v1/restaurants/1/orders/{orderId}/generate-bill
+     ?discount=0   ← optional discount amount
 
 8. Collect payment
    POST /api/v1/payments
      { billId, orderId, paymentMethod, amount, referenceNumber }
 
-9. Mark payment as success
-   (payment status updated to SUCCESS → bill auto-marked PAID)
+9. Mark payment as success → bill auto-marked PAID
+   PATCH /api/v1/payments/{id}/process
+   (or use PATCH /api/v1/payments/{id}/status with { "status": "SUCCESS" })
 
-10. Table freed
+10. Free the table
     PATCH /api/v1/restaurants/1/tables/{tableId}/status
       ?newStatus=AVAILABLE
 ```
 
 ---
 
-## ⚠️ Known Notes for Mobile Team
+## 🔒 Optimistic Locking (Concurrent Updates)
 
-1. **Bills endpoint** does NOT wrap response in `ApiResponse` envelope — it returns the DTO directly. All other endpoints use the standard `{ success, data, message, error }` wrapper.
+All `Order` and `Table` entities have a `version` field to handle concurrent updates safely.
 
-2. **Payment starts as PENDING** — after creation you need a separate status update call to mark it `SUCCESS`. Plan the UX accordingly.
+### How it works
+- Every response includes a `version` field (integer, starts at 0)
+- When two clients fetch the same order simultaneously and both try to update it, the **second update will be rejected** with `409 CONFLICT`
+- The client should re-fetch the resource and retry with the latest `version`
 
-3. **`GET /api/v1/foods`** requires `restaurantId` query param to return results — without it, returns empty list.
+### Example
+```
+Client A fetches Order 1 → version: 3
+Client B fetches Order 1 → version: 3
+
+Client A updates → SUCCESS, version becomes 4
+Client B updates → FAILS with 409 CONFLICT (their version 3 is stale)
+
+Client B re-fetches Order 1 → version: 4
+Client B retries update → SUCCESS, version becomes 5
+```
+
+### Conflict Error Response `409 CONFLICT`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICT",
+    "message": "The resource was modified by another request. Please re-fetch and retry."
+  }
+}
+```
+
+### Mobile team guidance
+- Always store the `version` value from responses
+- If you receive `409 CONFLICT` on an update, re-fetch the resource and retry
+- Do **not** manually increment or send the `version` field — it is managed automatically by the server
+
+---
+
+## 🔁 Payment Idempotency
+
+### How it works
+Idempotency is guaranteed through the `referenceNumber` field in the payment request.
+
+- If a payment with the same `referenceNumber` already has status `SUCCESS`, the API returns the **existing payment** — no duplicate charge
+- This protects against network retries and double-taps
+
+### Rules
+- `referenceNumber` must be **unique per payment attempt**
+- Generate it on the mobile side: e.g. `REF-{userId}-{timestamp}` or a UUID
+- Do **not** reuse the same `referenceNumber` for different payments
+
+### ❌ X-Idempotency-Key Header
+The `X-Idempotency-Key` request header is **not used**. It appears in older documentation — ignore it. Idempotency is handled **only via `referenceNumber`** in the request body.
+
+---
+
+## ⚠️ Notes for Mobile Team
+
+1. **All endpoints** (including Bills) return the standard `{ success, data, message, error }` `ApiResponse` envelope.
+
+2. **Payment lifecycle** — Payment is created as `PENDING`. Use one of these to confirm:
+   - `PATCH /api/v1/payments/{id}/process` — shortcut to mark as `SUCCESS`
+   - `PATCH /api/v1/payments/{id}/status` with body `{ "status": "SUCCESS" }` — full control
+
+3. **`GET /api/v1/foods`** requires `restaurantId` to return results. Use `GET /api/v1/foods/search` for global search without restaurantId.
 
 4. **Table status** is managed manually — after payment the app should call `PATCH /tables/{id}/status?newStatus=AVAILABLE` to free the table.
 
-5. **`version` field** in Order/Table responses is for optimistic locking — include it in update requests if needed to prevent concurrent overwrites.
+5. **Bill generation** — Use `POST /orders/{orderId}/generate-bill` to auto-generate a bill. Backend handles all tax calculations (18% GST = 9% CGST + 9% SGST). Manual `POST /api/v1/bills` still available if needed.
 
-6. **Date format** — all timestamps are ISO 8601: `2026-03-28T20:00:00` (no timezone, server local time).
+6. **Bill number** — `billNumber` is optional in `POST /api/v1/bills`. If not provided, server auto-generates: `BILL-{restaurantId}-{yyyyMMdd}-{seq}`.
 
-7. **`/auth/me`** token extraction is not fully wired yet — it returns 401 for now. Use login response data instead.
+7. **Date format** — All timestamps are ISO 8601: `2026-03-28T20:00:00` (server local time, IST).
+
+8. **Order type** — Send `orderType: "OFFLINE"` for dine-in, `orderType: "ONLINE"` for delivery/takeaway. Defaults to `OFFLINE` if not provided.
+
 
