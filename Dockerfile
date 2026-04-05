@@ -26,5 +26,6 @@ RUN groupadd -r app && useradd -r -g app app \
 # Switch to non-root user
 USER app
 
-EXPOSE 8080 8081
+EXPOSE 10000
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
