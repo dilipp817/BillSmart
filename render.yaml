@@ -1,0 +1,35 @@
+databases:
+  - name: billsmart-db
+    databaseName: billsmart
+    user: billsmart_user
+    plan: free
+
+services:
+  - type: web
+    name: billsmart-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: billsmart-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: billsmart-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: billsmart-db
+          property: password
+      - key: APP_JWT_SECRET
+        generateValue: true
+      - key: SERVER_SSL_ENABLED
+        value: "false"
+      - key: SERVER_PORT
+        value: "8080"
+
