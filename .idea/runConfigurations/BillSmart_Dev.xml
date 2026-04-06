@@ -1,0 +1,19 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BillSmart [Dev]" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="smartpos.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.autobill.billsmart.SmartposApplicationKt" />
+    <option name="ACTIVE_PROFILES" value="dev" />
+    <option name="PROGRAM_PARAMETERS" value="" />
+    <option name="VM_PARAMETERS" value="-Dspring.profiles.active=dev" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+    <option name="ALTERNATIVE_JRE_PATH" value="" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+    <envs>
+      <env name="SPRING_PROFILES_ACTIVE" value="dev" />
+    </envs>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
