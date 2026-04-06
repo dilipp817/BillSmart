@@ -1,110 +1,80 @@
 package com.autobill.billsmart.security
 
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.*
+import javax.crypto.SecretKey
 
 /**
  * JWT Token Provider
- * Generates, validates, and extracts information from JWT tokens
+ *
+ * Generates, validates and extracts claims from JWT tokens using JJWT 0.12.x API.
+ * Algorithm is HS256 (inferred automatically from the 32+ byte secret key).
+ * The signing key is initialised once at startup via [@PostConstruct].
  */
 @Component
 class JwtTokenProvider {
 
-    @Value("\${app.jwt.secret:your-secret-key-change-this-in-production}")
+    @Value("\${app.jwt.secret}")
     private lateinit var jwtSecret: String
 
-    @Value("\${app.jwt.expiration:86400000}") // 24 hours
+    @Value("\${app.jwt.expiration:86400000}") // 24 hours in ms
     private val jwtExpirationMs: Long = 86400000
 
-    /**
-     * Generate JWT token for user
-     */
-    fun generateToken(username: String, userId: Long, role: String): String {
-        val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
-        val now = Date()
-        val expiryDate = Date(now.time + jwtExpirationMs)
+    /** HMAC-SHA signing key — built once after Spring injects [jwtSecret]. */
+    private lateinit var signingKey: SecretKey
 
+    @PostConstruct
+    fun init() {
+        signingKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray(Charsets.UTF_8))
+    }
+
+    /** Generate a signed JWT for the given user. */
+    fun generateToken(username: String, userId: Long, role: String): String {
+        val now = Date()
         return Jwts.builder()
-            .setSubject(username)
+            .subject(username)
             .claim("userId", userId)
             .claim("role", role)
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .signWith(key, SignatureAlgorithm.HS512)
+            .issuedAt(now)
+            .expiration(Date(now.time + jwtExpirationMs))
+            .signWith(signingKey)          // HS256 inferred from 32-byte key
             .compact()
     }
 
-    /**
-     * Get username from JWT token
-     */
-    fun getUsernameFromToken(token: String): String? {
-        return try {
-            val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
-            val claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-            claims.payload.subject
-        } catch (e: Exception) {
-            null
-        }
-    }
+    /** Extract username (subject) from token; returns null if invalid/expired. */
+    fun getUsernameFromToken(token: String): String? = runCatching {
+        parseClaims(token).subject
+    }.getOrNull()
 
-    /**
-     * Get user ID from JWT token
-     */
-    fun getUserIdFromToken(token: String): Long? {
-        return try {
-            val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
-            val claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-            claims.payload.get("userId", Long::class.java)
-        } catch (e: Exception) {
-            null
-        }
-    }
+    /** Extract userId claim from token; returns null if invalid/expired. */
+    fun getUserIdFromToken(token: String): Long? = runCatching {
+        parseClaims(token).get("userId", Long::class.java)
+    }.getOrNull()
 
-    /**
-     * Get role from JWT token
-     */
-    fun getRoleFromToken(token: String): String? {
-        return try {
-            val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
-            val claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-            claims.payload.get("role", String::class.java)
-        } catch (e: Exception) {
-            null
-        }
-    }
+    /** Extract role claim from token; returns null if invalid/expired. */
+    fun getRoleFromToken(token: String): String? = runCatching {
+        parseClaims(token).get("role", String::class.java)
+    }.getOrNull()
 
-    /**
-     * Validate JWT token
-     */
-    fun validateToken(token: String): Boolean {
-        return try {
-            val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
-            Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
+    /** Returns true iff the token signature is valid and it has not expired. */
+    fun validateToken(token: String): Boolean = runCatching {
+        parseClaims(token)
+        true
+    }.getOrDefault(false)
 
-    /**
-     * Get expiration time in seconds
-     */
+    /** Expiration time in seconds (for the [expiresIn] response field). */
     fun getExpirationTimeInSeconds(): Long = jwtExpirationMs / 1000
-}
 
+    // ── private ──────────────────────────────────────────────────────────────
+
+    private fun parseClaims(token: String) =
+        Jwts.parser()
+            .verifyWith(signingKey)
+            .build()
+            .parseSignedClaims(token)
+            .payload
+}

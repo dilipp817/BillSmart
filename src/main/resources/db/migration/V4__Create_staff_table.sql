@@ -2,7 +2,7 @@
 -- Create the staff table with embedded address
 
 CREATE TABLE IF NOT EXISTS staff (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     gender VARCHAR(50) NOT NULL,
     age VARCHAR(10) NOT NULL,

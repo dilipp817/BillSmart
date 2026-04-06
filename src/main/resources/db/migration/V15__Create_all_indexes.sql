@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_restaurant_created ON orders(restaurant_id
 
 -- Order items indexes
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_menu_item_id ON order_items(menu_item_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_food_id ON order_items(food_id);
 
 -- Bills indexes
 CREATE INDEX IF NOT EXISTS idx_bills_number ON bills(bill_number);
@@ -50,5 +50,5 @@ CREATE INDEX IF NOT EXISTS idx_bills_restaurant_created ON bills(restaurant_id, 
 
 -- Bill items indexes
 CREATE INDEX IF NOT EXISTS idx_bill_items_bill_id ON bill_items(bill_id);
-CREATE INDEX IF NOT EXISTS idx_bill_items_order_item_id ON bill_items(order_item_id);
+CREATE INDEX IF NOT EXISTS idx_bill_items_food_id ON bill_items(food_id);
 

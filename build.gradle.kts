@@ -38,9 +38,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
-	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql:42.7.7")
 	implementation("org.flywaydb:flyway-core")
+	implementation("org.flywaydb:flyway-database-postgresql")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	// JWT Token support
 	implementation("io.jsonwebtoken:jjwt-api:0.12.3")
@@ -75,4 +75,37 @@ tasks.test {
 // Suppress Java deprecation warnings for now (not critical for Phase 1)
 tasks.withType<JavaCompile>().configureEach {
 	options.compilerArgs.add("-Xlint:-deprecation")
+}
+
+// -----------------------------------------------------------------
+// Profile-specific Run Tasks
+//   ./gradlew runDev      -> spring.profiles.active=dev
+//   ./gradlew runUat      -> spring.profiles.active=uat
+//   ./gradlew runProd     -> spring.profiles.active=prod
+// -----------------------------------------------------------------
+tasks.register<org.springframework.boot.gradle.tasks.run.BootRun>("runDev") {
+	group = "application"
+	description = "Run application with the DEVELOPMENT profile"
+	dependsOn("classes")
+	classpath = sourceSets["main"].runtimeClasspath
+	mainClass.set("com.autobill.billsmart.SmartposApplicationKt")
+	args("--spring.profiles.active=dev")
+}
+
+tasks.register<org.springframework.boot.gradle.tasks.run.BootRun>("runUat") {
+	group = "application"
+	description = "Run application with the UAT profile"
+	dependsOn("classes")
+	classpath = sourceSets["main"].runtimeClasspath
+	mainClass.set("com.autobill.billsmart.SmartposApplicationKt")
+	args("--spring.profiles.active=uat")
+}
+
+tasks.register<org.springframework.boot.gradle.tasks.run.BootRun>("runProd") {
+	group = "application"
+	description = "Run application with the PRODUCTION profile"
+	dependsOn("classes")
+	classpath = sourceSets["main"].runtimeClasspath
+	mainClass.set("com.autobill.billsmart.SmartposApplicationKt")
+	args("--spring.profiles.active=prod")
 }

@@ -3,10 +3,10 @@
 -- Purpose: Menu organization and categorization
 
 CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     -- Reference
-    restaurant_id INTEGER NOT NULL,
+    restaurant_id BIGINT NOT NULL,
 
     -- Content
     name VARCHAR(100) NOT NULL,

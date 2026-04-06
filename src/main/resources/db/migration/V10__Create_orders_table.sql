@@ -3,14 +3,14 @@
 -- Purpose: Customer orders management (matches Order entity exactly)
 
 CREATE TABLE IF NOT EXISTS orders (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     -- Identifiers
     order_number VARCHAR(50) NOT NULL UNIQUE,
 
     -- References
-    restaurant_id INTEGER NOT NULL,
-    table_id INTEGER NOT NULL,
+    restaurant_id BIGINT NOT NULL,
+    table_id BIGINT NOT NULL,
 
     -- Order Details
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
@@ -34,9 +34,17 @@ CREATE TABLE IF NOT EXISTS orders (
     CONSTRAINT check_order_total CHECK (total_amount >= 0)
 );
 
--- Update tables foreign key to reference orders (H2-compatible syntax)
-ALTER TABLE tables ADD CONSTRAINT IF NOT EXISTS fk_tables_order
-    FOREIGN KEY (current_order_id) REFERENCES orders(id) ON DELETE SET NULL;
+-- Update tables foreign key to reference orders (PostgreSQL-compatible syntax)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'fk_tables_order' AND table_name = 'tables'
+    ) THEN
+        ALTER TABLE tables ADD CONSTRAINT fk_tables_order
+            FOREIGN KEY (current_order_id) REFERENCES orders(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_orders_restaurant ON orders(restaurant_id);

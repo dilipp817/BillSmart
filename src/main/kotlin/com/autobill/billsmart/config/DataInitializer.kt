@@ -5,12 +5,15 @@ import com.autobill.billsmart.repositories.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
+import org.springframework.context.annotation.Profile
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 
 /**
- * DataInitializer — runs on every startup, idempotent.
- * Seeds default users with BCrypt-encoded passwords if they don't exist.
+ * DataInitializer — seeds default test users on startup (idempotent).
+ *
+ * ⚠️  Restricted to `dev` and `uat` profiles only.
+ *     Production uses real user management — test accounts must NOT exist there.
  *
  * TEST CREDENTIALS:
  *   admin  / admin123  (role: admin)
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Component
  *   staff2 / staff123  (role: staff)
  */
 @Component
+@Profile("dev", "uat")
 class DataInitializer(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder

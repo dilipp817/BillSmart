@@ -2,10 +2,10 @@
 -- Create the food table with foreign key to restaurant
 
 CREATE TABLE IF NOT EXISTS food (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     price DOUBLE PRECISION,
-    restro_id INTEGER NOT NULL,
+    restro_id BIGINT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_food_restaurant FOREIGN KEY (restro_id) REFERENCES restaurant(restro_id) ON DELETE CASCADE
 );

@@ -3,11 +3,11 @@
 -- Purpose: Individual items within an order (matches OrderItem entity exactly)
 
 CREATE TABLE IF NOT EXISTS order_items (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     -- References
-    order_id INTEGER NOT NULL,
-    food_id INTEGER NOT NULL,
+    order_id BIGINT NOT NULL,
+    food_id BIGINT NOT NULL,
 
     -- Quantity & Pricing
     quantity INTEGER NOT NULL DEFAULT 1,

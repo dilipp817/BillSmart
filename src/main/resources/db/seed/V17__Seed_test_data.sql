@@ -14,7 +14,7 @@
 -- 1. RESTAURANTS
 -- ============================================================
 
-INSERT INTO restaurant (outlet_name, display_name, outlet_manager, building, street, store_location, zip_code, is_active, tax_rate, gstin)
+INSERT INTO restaurant (outlet_name, displayname, outlet_manager, building, street, store_location, zip_code, is_active, tax_rate, gstin)
 VALUES
     ('spice_garden', 'Spice Garden', 'Rahul Sharma', 'Ground Floor, Tower A', 'MG Road', 'Bangalore', '560001', TRUE, 18.00, '29ABCDE1234F1Z5'),
     ('burger_house', 'The Burger House', 'Priya Mehta', 'Shop 12, Mall Road', 'Linking Road', 'Mumbai', '400050', TRUE, 18.00, '27XYZPQ9876G2A1');
@@ -27,9 +27,9 @@ VALUES
 
 INSERT INTO users (username, email, password, role, is_active, restaurant_id)
 VALUES
-    ('admin',  'admin@billsmart.com',  '$2a$10$slYQmyNdgTY18LCT4sPa4uzUB1yfjs/rVdS7VGwVnMRteOBZxfA8e', 'admin',  TRUE, 1),
-    ('staff1', 'staff1@billsmart.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p292zSgp/gAZlo1cP3HJae', 'staff',  TRUE, 1),
-    ('staff2', 'staff2@billsmart.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p292zSgp/gAZlo1cP3HJae', 'staff',  TRUE, 2);
+    ('admin',  'admin@billsmart.com',  '$2b$10$vQLVK3y8Ol7qWxFJivuhu.2MA/Vh20awGGj0lOrBdMkOhf2ptuhxm', 'admin',  TRUE, 1),
+    ('staff1', 'staff1@billsmart.com', '$2b$10$XLZeQ97PVKfeYRecs6Fl3ORhcbRAHxMB8c9IP1beSYVjUEAnJP8ay', 'staff',  TRUE, 1),
+    ('staff2', 'staff2@billsmart.com', '$2b$10$XLZeQ97PVKfeYRecs6Fl3ORhcbRAHxMB8c9IP1beSYVjUEAnJP8ay', 'staff',  TRUE, 2);
 
 -- ============================================================
 -- 3. CATEGORIES — Spice Garden (restaurant_id = 1)

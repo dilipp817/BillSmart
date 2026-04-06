@@ -1,13 +1,26 @@
-HELP.md
-
-### Gradle build output ###
+# ===========================
+# Gradle
+# ===========================
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### Spring ###
+# ===========================
+# IntelliJ IDEA
+# ===========================
+.idea/
+out/
+*.iws
+*.iml
+*.ipr
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# ===========================
+# Spring / Eclipse IDE
+# ===========================
 .apt_generated
 .classpath
 .factorypath
@@ -19,52 +32,45 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA - only exclude machine-local files, keep shared config ###
-*.iws
-*.ipr
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/usage.statistics.xml
-.idea/dictionaries
-.idea/shelf
-.idea/dataSources/
-.idea/dataSources.local.xml
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
+# ===========================
+# VS Code
+# ===========================
 .vscode/
 
-### Kotlin ###
+# ===========================
+# Kotlin / Java
+# ===========================
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
 .kotlin
-
-### OS ###
-.DS_Store
-*.swp
-*~
-
-### Logs ###
-*.log
-logs/
-
-### Secrets - never commit ###
-.env
-.env.local
-
-### Compiled output ###
 BOOT-INF/
 *.war
 
-### Misc ###
+# ===========================
+# OS / Editor
+# ===========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ===========================
+# Logs & temp files
+# ===========================
+*.log
+logs/
 script_result.txt
 
-### Keep the tracked keystore ###
+# ===========================
+# Environment / Secrets
+# ===========================
+.env
+.env.local
+.env.production
+
+# ===========================
+# Keep tracked files
+# ===========================
 !src/main/resources/keystore.p12

@@ -3,11 +3,11 @@
 -- Purpose: Payment records and transaction tracking (matches Payment entity exactly)
 
 CREATE TABLE IF NOT EXISTS payments (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     -- References
-    bill_id INTEGER,
-    order_id INTEGER NOT NULL,
+    bill_id BIGINT,
+    order_id BIGINT NOT NULL,
 
     -- Payment Details
     payment_method VARCHAR(50) NOT NULL,

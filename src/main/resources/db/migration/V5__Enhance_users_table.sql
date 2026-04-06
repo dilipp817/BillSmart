@@ -3,16 +3,24 @@
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(500);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'staff';
-ALTER TABLE users ADD COLUMN IF NOT EXISTS restaurant_id INTEGER;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS restaurant_id BIGINT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS device_id VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS device_type VARCHAR(50);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;
 
--- Add foreign key constraint if it doesn't exist (H2-compatible)
-ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS fk_users_restaurant
-    FOREIGN KEY (restaurant_id) REFERENCES restaurant(restro_id) ON DELETE SET NULL;
+-- Add foreign key constraint if it doesn't exist (PostgreSQL-compatible)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'fk_users_restaurant' AND table_name = 'users'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT fk_users_restaurant
+            FOREIGN KEY (restaurant_id) REFERENCES restaurant(restro_id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_restaurant_id ON users(restaurant_id);

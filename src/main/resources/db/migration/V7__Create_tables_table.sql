@@ -3,10 +3,10 @@
 -- Purpose: Restaurant seating management
 
 CREATE TABLE tables (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     -- Reference
-    restaurant_id INTEGER NOT NULL,
+    restaurant_id BIGINT NOT NULL,
 
     -- Table Info
     table_number VARCHAR(50) NOT NULL,
@@ -17,11 +17,14 @@ CREATE TABLE tables (
     status VARCHAR(50) NOT NULL DEFAULT 'available',
 
     -- Current Order
-    current_order_id INTEGER,
+    current_order_id BIGINT,
 
     -- Audit
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Optimistic locking
+    version BIGINT NOT NULL DEFAULT 0,
 
     -- Constraints
     CONSTRAINT fk_tables_restaurant FOREIGN KEY (restaurant_id)
