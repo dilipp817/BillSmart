@@ -27,7 +27,10 @@ projects:
                   name: BillSmart
                   property: password
               - key: APP_JWT_SECRET
-                generateValue: true
+                # Set this ONCE manually in the Render Dashboard.
+                # sync: false prevents Blueprint syncs from overwriting it
+                # (avoids invalidating all JWT tokens on every deploy).
+                sync: false
               - key: SERVER_SSL_ENABLED
                 value: "false"
               - key: SERVER_PORT
@@ -67,7 +70,10 @@ projects:
                   name: billsmart-uat-db
                   property: password
               - key: APP_JWT_SECRET
-                generateValue: true
+                # Set this ONCE manually in the Render Dashboard.
+                # sync: false prevents Blueprint syncs from overwriting it
+                # (avoids invalidating all JWT tokens on every deploy).
+                sync: false
               - key: SERVER_SSL_ENABLED
                 value: "false"
               - key: SERVER_PORT
@@ -105,7 +111,10 @@ projects:
                   name: billsmart-dev-db
                   property: password
               - key: APP_JWT_SECRET
-                generateValue: true
+                # Set this ONCE manually in the Render Dashboard.
+                # sync: false prevents Blueprint syncs from overwriting it
+                # (avoids invalidating all JWT tokens on every deploy).
+                sync: false
               - key: SERVER_SSL_ENABLED
                 value: "false"
               - key: SERVER_PORT
