@@ -68,7 +68,7 @@ projects:
                 generateValue: true
               - key: SERVER_SSL_ENABLED
                 value: "false"
-              - key: PORT
+              - key: SERVER_PORT
                 value: "10000"
         databases:
           - name: billsmart-uat-db
