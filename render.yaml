@@ -38,6 +38,44 @@ projects:
             user: billsmart_user
             plan: free
 
+      # ── UAT environment (User Acceptance Testing) ─────────────────
+      # Runs the "uat" Spring profile: INFO logging, seed data via Flyway,
+      # ddl-auto=validate. SSL disabled — Render's edge handles HTTPS.
+      - name: uat
+        services:
+          - type: web
+            name: billsmart-api-uat
+            runtime: docker
+            plan: free
+            dockerfilePath: ./Dockerfile
+            healthCheckPath: /actuator/health
+            envVars:
+              - key: SPRING_PROFILES_ACTIVE
+                value: uat
+              - key: SPRING_DATASOURCE_URL
+                fromDatabase:
+                  name: billsmart-uat-db
+                  property: connectionString
+              - key: SPRING_DATASOURCE_USERNAME
+                fromDatabase:
+                  name: billsmart-uat-db
+                  property: user
+              - key: SPRING_DATASOURCE_PASSWORD
+                fromDatabase:
+                  name: billsmart-uat-db
+                  property: password
+              - key: APP_JWT_SECRET
+                generateValue: true
+              - key: SERVER_SSL_ENABLED
+                value: "false"
+              - key: PORT
+                value: "10000"
+        databases:
+          - name: billsmart-uat-db
+            databaseName: billsmart_uat
+            user: billsmart_uat_user
+            plan: free
+
       # ── DEV environment (mobile team sandbox) ─────────────────────
       # Runs the "dev" Spring profile: verbose SQL + DEBUG logging.
       # SSL is disabled — Render's edge proxy provides HTTPS automatically.
