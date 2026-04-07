@@ -1,74 +1,77 @@
-databases:
-  # ── PRODUCTION database ────────────────────────────────────────────
-  - name: billsmart-db
-    databaseName: billsmart
-    user: billsmart_user
-    plan: free
+projects:
+  - name: billsmart
+    environments:
 
-  # ── DEV / Mobile-team sandbox database ────────────────────────────
-  - name: billsmart-dev-db
-    databaseName: billsmart_dev
-    user: billsmart_dev_user
-    plan: free
+      # ── PRODUCTION environment ─────────────────────────────────────
+      - name: production
+        services:
+          - type: web
+            name: billsmart-api
+            runtime: docker
+            plan: free
+            dockerfilePath: ./Dockerfile
+            healthCheckPath: /actuator/health
+            envVars:
+              - key: SPRING_PROFILES_ACTIVE
+                value: prod
+              - key: SPRING_DATASOURCE_URL
+                fromDatabase:
+                  name: billsmart-db
+                  property: connectionString
+              - key: SPRING_DATASOURCE_USERNAME
+                fromDatabase:
+                  name: billsmart-db
+                  property: user
+              - key: SPRING_DATASOURCE_PASSWORD
+                fromDatabase:
+                  name: billsmart-db
+                  property: password
+              - key: APP_JWT_SECRET
+                generateValue: true
+              - key: SERVER_SSL_ENABLED
+                value: "false"
+              - key: SERVER_PORT
+                value: "10000"
+        databases:
+          - name: billsmart-db
+            databaseName: billsmart
+            user: billsmart_user
+            plan: free
 
-services:
-  # ── PRODUCTION service ────────────────────────────────────────────
-  - type: web
-    name: billsmart-api
-    runtime: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /actuator/health
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: prod
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: billsmart-db
-          property: connectionString
-      - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase:
-          name: billsmart-db
-          property: user
-      - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: billsmart-db
-          property: password
-      - key: APP_JWT_SECRET
-        generateValue: true
-      - key: SERVER_SSL_ENABLED
-        value: "false"
-      - key: SERVER_PORT
-        value: "10000"
-
-  # ── DEV service (for mobile team testing) ─────────────────────────
-  # Runs the "dev" Spring profile: verbose SQL + DEBUG logging.
-  # SSL is disabled — Render's edge proxy provides HTTPS automatically.
-  - type: web
-    name: billsmart-api-dev
-    runtime: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /actuator/health
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: dev
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: billsmart-dev-db
-          property: connectionString
-      - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase:
-          name: billsmart-dev-db
-          property: user
-      - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: billsmart-dev-db
-          property: password
-      - key: APP_JWT_SECRET
-        generateValue: true
-      - key: SERVER_SSL_ENABLED
-        value: "false"
-      - key: SERVER_PORT
-        value: "10000"
-
+      # ── DEV environment (mobile team sandbox) ─────────────────────
+      # Runs the "dev" Spring profile: verbose SQL + DEBUG logging.
+      # SSL is disabled — Render's edge proxy provides HTTPS automatically.
+      - name: dev
+        services:
+          - type: web
+            name: billsmart-api-dev
+            runtime: docker
+            plan: free
+            dockerfilePath: ./Dockerfile
+            healthCheckPath: /actuator/health
+            envVars:
+              - key: SPRING_PROFILES_ACTIVE
+                value: dev
+              - key: SPRING_DATASOURCE_URL
+                fromDatabase:
+                  name: billsmart-dev-db
+                  property: connectionString
+              - key: SPRING_DATASOURCE_USERNAME
+                fromDatabase:
+                  name: billsmart-dev-db
+                  property: user
+              - key: SPRING_DATASOURCE_PASSWORD
+                fromDatabase:
+                  name: billsmart-dev-db
+                  property: password
+              - key: APP_JWT_SECRET
+                generateValue: true
+              - key: SERVER_SSL_ENABLED
+                value: "false"
+              - key: SERVER_PORT
+                value: "10000"
+        databases:
+          - name: billsmart-dev-db
+            databaseName: billsmart_dev
+            user: billsmart_dev_user
+            plan: free
