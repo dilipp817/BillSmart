@@ -105,10 +105,6 @@ projects:
                 value: "false"
               - key: SERVER_PORT
                 value: "10000"
-        databases:
-          # Shared database (production DB reused under free tier)
-          - name: BillSmart
-            databaseName: smart_pos_9obz
-            user: smart_pos_9obz_user
-            plan: free
-            region: singapore
+        # BillSmart database already exists on Render — no need to redefine it here.
+        # fromDatabase references above look it up by name automatically.
+
