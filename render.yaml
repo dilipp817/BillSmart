@@ -1,12 +1,20 @@
 # ================================================================
-# Render.com — DEV Web Service
-# Database: Neon.tech (free, never expires)
-# To deploy: New → Web Service → connect GitHub repo → branch: develop
-# After deploy: set SPRING_DATASOURCE_URL / USERNAME / PASSWORD /
-#               APP_JWT_SECRET manually in Render Dashboard → Environment
+# Render.com — Web Services (DEV + UAT + PRODUCTION)
+# Database: Neon.tech (3 branches — free, never expires)
+#
+# After first deploy, set these env vars manually in Render Dashboard
+# for EACH of the 3 services:
+#   SPRING_DATASOURCE_URL      → Neon JDBC URL for that branch
+#   SPRING_DATASOURCE_USERNAME → neondb_owner
+#   SPRING_DATASOURCE_PASSWORD → from Neon Dashboard
+#   APP_JWT_SECRET             → openssl rand -base64 64  (different per service)
 # ================================================================
 
 services:
+
+  # ── DEV service (mobile team sandbox) ─────────────────────────────
+  # Neon branch: dev
+  # URL: jdbc:postgresql://ep-shy-unit-a1l91aoe-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
   - type: web
     name: billsmart-api-dev
     runtime: docker
@@ -16,67 +24,65 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: dev
-
-      # --- Neon.tech DB credentials (set manually in Render Dashboard) ---
-      # Get these from: Neon Dashboard → dev branch → Connection Details → Java(JDBC)
       - key: SPRING_DATASOURCE_URL
-        sync: false   # e.g. jdbc:postgresql://ep-xxx.ap-southeast-1.aws.neon.tech/neondb
+        sync: false
       - key: SPRING_DATASOURCE_USERNAME
-        sync: false   # e.g. neondb_owner
+        sync: false
       - key: SPRING_DATASOURCE_PASSWORD
-        sync: false   # from Neon connection details
-
-      # --- JWT Secret (set manually in Render Dashboard — never auto-generate) ---
+        sync: false
       - key: APP_JWT_SECRET
-        sync: false   # run: openssl rand -base64 64
-
-      # --- Render edge handles HTTPS — disable Spring's internal SSL ---
+        sync: false
       - key: SERVER_SSL_ENABLED
         value: "false"
       - key: SERVER_PORT
         value: "10000"
 
-# ── UAT and Production services (uncomment when ready) ────────────
-#  - type: web
-#    name: billsmart-api-uat
-#    runtime: docker
-#    plan: free
-#    dockerfilePath: ./Dockerfile
-#    healthCheckPath: /actuator/health
-#    envVars:
-#      - key: SPRING_PROFILES_ACTIVE
-#        value: uat
-#      - key: SPRING_DATASOURCE_URL
-#        sync: false   # Neon uat branch connection string
-#      - key: SPRING_DATASOURCE_USERNAME
-#        sync: false
-#      - key: SPRING_DATASOURCE_PASSWORD
-#        sync: false
-#      - key: APP_JWT_SECRET
-#        sync: false
-#      - key: SERVER_SSL_ENABLED
-#        value: "false"
-#      - key: SERVER_PORT
-#        value: "10000"
-#
-#  - type: web
-#    name: billsmart-api
-#    runtime: docker
-#    plan: free
-#    dockerfilePath: ./Dockerfile
-#    healthCheckPath: /actuator/health
-#    envVars:
-#      - key: SPRING_PROFILES_ACTIVE
-#        value: prod
-#      - key: SPRING_DATASOURCE_URL
-#        sync: false   # Neon production branch connection string
-#      - key: SPRING_DATASOURCE_USERNAME
-#        sync: false
-#      - key: SPRING_DATASOURCE_PASSWORD
-#        sync: false
-#      - key: APP_JWT_SECRET
-#        sync: false
-#      - key: SERVER_SSL_ENABLED
-#        value: "false"
-#      - key: SERVER_PORT
-#        value: "10000"
+  # ── UAT service (User Acceptance Testing) ─────────────────────────
+  # Neon branch: uat
+  # URL: jdbc:postgresql://ep-misty-shape-a1f0uvz3-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+  - type: web
+    name: billsmart-api-uat
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: uat
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: APP_JWT_SECRET
+        sync: false
+      - key: SERVER_SSL_ENABLED
+        value: "false"
+      - key: SERVER_PORT
+        value: "10000"
+
+  # ── PRODUCTION service ─────────────────────────────────────────────
+  # Neon branch: production
+  # URL: jdbc:postgresql://ep-shiny-star-a1buza1q.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+  - type: web
+    name: billsmart-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: APP_JWT_SECRET
+        sync: false
+      - key: SERVER_SSL_ENABLED
+        value: "false"
+      - key: SERVER_PORT
+        value: "10000"
