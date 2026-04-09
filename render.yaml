@@ -1,110 +1,82 @@
-projects:
-  - name: billsmart
-    environments:
+# ================================================================
+# Render.com — DEV Web Service
+# Database: Neon.tech (free, never expires)
+# To deploy: New → Web Service → connect GitHub repo → branch: develop
+# After deploy: set SPRING_DATASOURCE_URL / USERNAME / PASSWORD /
+#               APP_JWT_SECRET manually in Render Dashboard → Environment
+# ================================================================
 
-#      # ── PRODUCTION environment ─────────────────────────────────────
-#      - name: production
-#        services:
-#          - type: web
-#            name: billsmart-api
-#            runtime: docker
-#            plan: free
-#            dockerfilePath: ./Dockerfile
-#            healthCheckPath: /actuator/health
-#            envVars:
-#              - key: SPRING_PROFILES_ACTIVE
-#                value: prod
-#              - key: SPRING_DATASOURCE_URL
-#                fromDatabase:
-#                  name: BillSmart
-#                  property: connectionString
-#              - key: SPRING_DATASOURCE_USERNAME
-#                fromDatabase:
-#                  name: BillSmart
-#                  property: user
-#              - key: SPRING_DATASOURCE_PASSWORD
-#                fromDatabase:
-#                  name: BillSmart
-#                  property: password
-#              - key: APP_JWT_SECRET
-#                sync: false
-#              - key: SERVER_SSL_ENABLED
-#                value: "false"
-#              - key: SERVER_PORT
-#                value: "10000"
-#        databases:
-#          - name: BillSmart
-#            databaseName: smart_pos_9obz
-#            user: smart_pos_9obz_user
-#            plan: free
-#            region: singapore
+services:
+  - type: web
+    name: billsmart-api-dev
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev
 
-#      # ── UAT environment (User Acceptance Testing) ─────────────────
-#      - name: uat
-#        services:
-#          - type: web
-#            name: billsmart-api-uat
-#            runtime: docker
-#            plan: free
-#            dockerfilePath: ./Dockerfile
-#            healthCheckPath: /actuator/health
-#            envVars:
-#              - key: SPRING_PROFILES_ACTIVE
-#                value: uat
-#              - key: SPRING_DATASOURCE_URL
-#                fromDatabase:
-#                  name: BillSmart
-#                  property: connectionString
-#              - key: SPRING_DATASOURCE_USERNAME
-#                fromDatabase:
-#                  name: BillSmart
-#                  property: user
-#              - key: SPRING_DATASOURCE_PASSWORD
-#                fromDatabase:
-#                  name: BillSmart
-#                  property: password
-#              - key: APP_JWT_SECRET
-#                sync: false
-#              - key: SERVER_SSL_ENABLED
-#                value: "false"
-#              - key: SERVER_PORT
-#                value: "10000"
+      # --- Neon.tech DB credentials (set manually in Render Dashboard) ---
+      # Get these from: Neon Dashboard → dev branch → Connection Details → Java(JDBC)
+      - key: SPRING_DATASOURCE_URL
+        sync: false   # e.g. jdbc:postgresql://ep-xxx.ap-southeast-1.aws.neon.tech/neondb
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false   # e.g. neondb_owner
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false   # from Neon connection details
 
-      # ── DEV environment (mobile team sandbox) ─────────────────────
-      # Runs the "dev" Spring profile: verbose SQL + DEBUG logging.
-      # SSL is disabled — Render's edge proxy provides HTTPS automatically.
-      - name: dev
-        services:
-          - type: web
-            name: billsmart-api-dev
-            runtime: docker
-            plan: free
-            dockerfilePath: ./Dockerfile
-            healthCheckPath: /actuator/health
-            envVars:
-              - key: SPRING_PROFILES_ACTIVE
-                value: dev
-              - key: SPRING_DATASOURCE_URL
-                fromDatabase:
-                  name: BillSmart
-                  property: connectionString
-              - key: SPRING_DATASOURCE_USERNAME
-                fromDatabase:
-                  name: BillSmart
-                  property: user
-              - key: SPRING_DATASOURCE_PASSWORD
-                fromDatabase:
-                  name: BillSmart
-                  property: password
-              - key: APP_JWT_SECRET
-                # Set this ONCE manually in the Render Dashboard.
-                # sync: false prevents Blueprint syncs from overwriting it
-                # (avoids invalidating all JWT tokens on every deploy).
-                sync: false
-              - key: SERVER_SSL_ENABLED
-                value: "false"
-              - key: SERVER_PORT
-                value: "10000"
-        # BillSmart database already exists on Render — no need to redefine it here.
-        # fromDatabase references above look it up by name automatically.
+      # --- JWT Secret (set manually in Render Dashboard — never auto-generate) ---
+      - key: APP_JWT_SECRET
+        sync: false   # run: openssl rand -base64 64
 
+      # --- Render edge handles HTTPS — disable Spring's internal SSL ---
+      - key: SERVER_SSL_ENABLED
+        value: "false"
+      - key: SERVER_PORT
+        value: "10000"
+
+# ── UAT and Production services (uncomment when ready) ────────────
+#  - type: web
+#    name: billsmart-api-uat
+#    runtime: docker
+#    plan: free
+#    dockerfilePath: ./Dockerfile
+#    healthCheckPath: /actuator/health
+#    envVars:
+#      - key: SPRING_PROFILES_ACTIVE
+#        value: uat
+#      - key: SPRING_DATASOURCE_URL
+#        sync: false   # Neon uat branch connection string
+#      - key: SPRING_DATASOURCE_USERNAME
+#        sync: false
+#      - key: SPRING_DATASOURCE_PASSWORD
+#        sync: false
+#      - key: APP_JWT_SECRET
+#        sync: false
+#      - key: SERVER_SSL_ENABLED
+#        value: "false"
+#      - key: SERVER_PORT
+#        value: "10000"
+#
+#  - type: web
+#    name: billsmart-api
+#    runtime: docker
+#    plan: free
+#    dockerfilePath: ./Dockerfile
+#    healthCheckPath: /actuator/health
+#    envVars:
+#      - key: SPRING_PROFILES_ACTIVE
+#        value: prod
+#      - key: SPRING_DATASOURCE_URL
+#        sync: false   # Neon production branch connection string
+#      - key: SPRING_DATASOURCE_USERNAME
+#        sync: false
+#      - key: SPRING_DATASOURCE_PASSWORD
+#        sync: false
+#      - key: APP_JWT_SECRET
+#        sync: false
+#      - key: SERVER_SSL_ENABLED
+#        value: "false"
+#      - key: SERVER_PORT
+#        value: "10000"
