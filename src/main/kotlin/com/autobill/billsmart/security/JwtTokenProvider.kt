@@ -50,9 +50,12 @@ class JwtTokenProvider {
         parseClaims(token).subject
     }.getOrNull()
 
-    /** Extract userId claim from token; returns null if invalid/expired. */
+    /** Extract userId claim from token; returns null if invalid/expired.
+     *  JJWT deserialises small JSON numbers as Integer, not Long, so we
+     *  normalise any Number subtype to Long to avoid a silent null result. */
     fun getUserIdFromToken(token: String): Long? = runCatching {
-        parseClaims(token).get("userId", Long::class.java)
+        val raw = parseClaims(token)["userId"] ?: return@runCatching null
+        (raw as? Number)?.toLong()
     }.getOrNull()
 
     /** Extract role claim from token; returns null if invalid/expired. */
