@@ -85,18 +85,34 @@ class AuthController(
      * POST /api/v1/auth/validate
      * Validate JWT token
      *
-     * @param token JWT token to validate
-     * @return Success if token is valid
+     * Reads the token from the Authorization Bearer header — the same reliable
+     * mechanism used by every other authenticated endpoint. Sending the JWT as
+     * a URL query parameter is intentionally avoided: long tokens can be
+     * mangled by proxies/load-balancers, and URLs are recorded in server logs,
+     * which would expose the token.
+     *
+     * @param authHeader Authorization header containing Bearer JWT token
+     * @return Token claims (valid, username, userId, role) if valid
      */
     @PostMapping("/validate")
-    fun validateToken(@RequestParam token: String): ResponseEntity<ApiResponse<Map<String, Any>>> {
+    fun validateToken(
+        @RequestHeader(value = "Authorization", required = false) authHeader: String?
+    ): ResponseEntity<ApiResponse<Map<String, Any>>> {
         log.debug("Validating token")
 
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ApiResponse.error("UNAUTHORIZED", "Authorization header missing or invalid. Expected: Bearer <token>")
+            )
+        }
+
+        val token = authHeader.substring(7).trim()
         val username = jwtTokenProvider.getUsernameFromToken(token)
         val userId = jwtTokenProvider.getUserIdFromToken(token)
         val role = jwtTokenProvider.getRoleFromToken(token)
 
         return if (username != null && userId != null) {
+            log.debug("Token validated successfully for user: {}", username)
             ResponseEntity.ok(
                 ApiResponse.success(
                     mapOf("valid" to true, "username" to username, "userId" to userId, "role" to (role ?: "staff")),
@@ -104,6 +120,7 @@ class AuthController(
                 )
             )
         } else {
+            log.debug("Token validation failed")
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ApiResponse.error("INVALID_TOKEN", "Token is invalid or expired")
             )

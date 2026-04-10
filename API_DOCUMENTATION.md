@@ -140,6 +140,43 @@ Validate a JWT token and return user info if valid.
 
 ---
 
+### POST `/api/v1/auth/validate-body` ⭐ RECOMMENDED
+Validate a JWT token via request body (avoids URL encoding issues with query parameters).
+
+**Request Body:**
+```json
+{
+  "token": "eyJhbGciOiJIUzUxMiJ9..."
+}
+```
+
+**Success Response `200 OK`:**
+```json
+{
+  "success": true,
+  "message": "Token is valid",
+  "data": {
+    "valid": true,
+    "username": "admin",
+    "userId": 1,
+    "role": "admin"
+  }
+}
+```
+
+**Error Response `401 UNAUTHORIZED`:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Token is invalid or expired"
+  }
+}
+```
+
+---
+
 ## 🍽️ Foods
 
 ### GET `/api/v1/foods`
