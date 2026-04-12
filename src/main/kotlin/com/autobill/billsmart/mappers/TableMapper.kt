@@ -41,6 +41,7 @@ interface TableMapper {
     @Mapping(target = "currentOrder", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "lastOccupiedAt", ignore = true)
     @Mapping(target = "version", ignore = true)
     fun toEntity(request: TableRequest, restaurant: Restaurant): Table
 

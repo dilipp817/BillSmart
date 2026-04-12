@@ -75,13 +75,14 @@ class OrdersController(
      */
     @PostMapping("/{orderId}/items")
     fun addItemToOrder(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long,
         @Valid @RequestBody request: AddOrderItemRequest
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("POST: Add item to order: {}", orderId)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.addItemToOrder(orderId, request)
             ResponseEntity.status(HttpStatus.OK)
                 .body(
@@ -134,19 +135,20 @@ class OrdersController(
      */
     @GetMapping("/{orderId}")
     fun getOrder(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("GET: Fetch order - ID: {}", orderId)
 
         val order = orderService.getOrder(orderId)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(
-                    ApiResponse.error(
-                        code = "NOT_FOUND",
-                        message = "Order not found"
-                    )
-                )
+                .body(ApiResponse.error("NOT_FOUND", "Order not found"))
+
+        // Tenant isolation: return 404 rather than 403 to avoid leaking cross-tenant IDs
+        if (order.restaurantId != restaurantId) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("NOT_FOUND", "Order not found"))
+        }
 
         return ResponseEntity.ok(
             ApiResponse.success(
@@ -218,8 +220,8 @@ class OrdersController(
     @GetMapping("/range")
     fun getOrdersByDateRange(
         @PathVariable restaurantId: Long,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime
+        @RequestParam(name = "start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
+        @RequestParam(name = "end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime
     ): ResponseEntity<ApiResponse<OrderListResponse>> {
         logger.info("GET: Fetch orders by date range - start: {}, end: {}", startDate, endDate)
 
@@ -270,13 +272,14 @@ class OrdersController(
      */
     @PatchMapping("/{orderId}/status")
     fun updateOrderStatus(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long,
         @Valid @RequestBody request: OrderStatusUpdateRequest
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("PATCH: Update order status - ID: {}, newStatus: {}", orderId, request.status)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.updateOrderStatus(orderId, request.status)
             ResponseEntity.ok(
                 ApiResponse.success(
@@ -297,7 +300,7 @@ class OrdersController(
      */
     @PutMapping("/{orderId}/items/{itemId}")
     fun updateOrderItem(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long,
         @PathVariable @Positive itemId: Long,
         @Valid @RequestBody request: UpdateOrderItemRequest
@@ -305,6 +308,7 @@ class OrdersController(
         logger.info("PUT: Update order item - orderId: {}, itemId: {}", orderId, itemId)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.updateOrderItem(orderId, itemId, request)
             ResponseEntity.ok(
                 ApiResponse.success(
@@ -325,14 +329,15 @@ class OrdersController(
      */
     @PatchMapping("/{orderId}/items/{itemId}/status")
     fun updateItemStatus(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long,
         @PathVariable @Positive itemId: Long,
-        @RequestParam newStatus: String
+        @RequestParam(name = "new_status") newStatus: String
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("PATCH: Update item status - orderId: {}, itemId: {}, status: {}", orderId, itemId, newStatus)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.updateItemStatus(orderId, itemId, newStatus)
             ResponseEntity.ok(
                 ApiResponse.success(
@@ -355,13 +360,14 @@ class OrdersController(
      */
     @DeleteMapping("/{orderId}/items/{itemId}")
     fun removeItemFromOrder(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long,
         @PathVariable @Positive itemId: Long
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("DELETE: Remove item from order - orderId: {}, itemId: {}", orderId, itemId)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.removeItemFromOrder(orderId, itemId)
             ResponseEntity.ok(
                 ApiResponse.success(
@@ -379,15 +385,17 @@ class OrdersController(
      * Cancel order
      *
      * DELETE /api/v1/restaurants/{restaurantId}/orders/{orderId}
+     * Restricted to MANAGER and ADMIN roles (enforced in SecurityConfig).
      */
     @DeleteMapping("/{orderId}")
     fun cancelOrder(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("DELETE: Cancel order - ID: {}", orderId)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.cancelOrder(orderId)
             ResponseEntity.ok(
                 ApiResponse.success(
@@ -412,13 +420,14 @@ class OrdersController(
      */
     @PostMapping("/{orderId}/generate-bill")
     fun generateBill(
-        @PathVariable _restaurantId: Long,
+        @PathVariable restaurantId: Long,
         @PathVariable @Positive orderId: Long,
         @RequestParam(required = false, defaultValue = "0") discount: BigDecimal
     ): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("POST: Generate bill for order: {}, discount: {}", orderId, discount)
 
         return try {
+            requireOrderBelongsToRestaurant(restaurantId, orderId)
             val bill = billService.generateBillForOrder(orderId, discount)
             ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(bill, "Bill generated successfully"))
@@ -457,6 +466,20 @@ class OrdersController(
             logger.error("Error searching orders: {}", e.message)
             handleAppException(e)
         }
+    }
+
+    // ==================== HELPERS ====================
+
+    /**
+     * Tenant isolation guard — ensures the order belongs to the restaurant in the URL path.
+     * Returns 404 (not 403) to avoid revealing that the order exists in a different tenant.
+     * Must be called before any mutation on an order-scoped endpoint.
+     */
+    private fun requireOrderBelongsToRestaurant(restaurantId: Long, orderId: Long) {
+        val order = orderService.getOrder(orderId)
+            ?: throw AppException.ResourceNotFoundException("Order not found")
+        if (order.restaurantId != restaurantId)
+            throw AppException.ResourceNotFoundException("Order not found")
     }
 
     /**

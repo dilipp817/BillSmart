@@ -1,6 +1,7 @@
 package com.autobill.billsmart.model
 
 import com.autobill.billsmart.model.enums.OrderStatus
+import com.autobill.billsmart.model.enums.OrderType
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -46,10 +47,10 @@ class Order {
     var status: OrderStatus = OrderStatus.PENDING
 
     /**
-     * Order type: OFFLINE (dine-in) or ONLINE (delivery/takeaway)
+     * Order type: DINE_IN (at table), TAKEAWAY (customer collects), DELIVERY (we deliver)
      */
     @Column(name = "order_type", nullable = false, length = 20)
-    var orderType: String = "OFFLINE"
+    var orderType: String = "DINE_IN"
 
     /**
      * Order number for identification (e.g., "ORD-2026-03-28-001")

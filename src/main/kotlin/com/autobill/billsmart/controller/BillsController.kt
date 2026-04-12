@@ -1,7 +1,6 @@
 package com.autobill.billsmart.controller
 
 import com.autobill.billsmart.dto.*
-import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.services.BillService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -86,19 +85,10 @@ class BillsController(
     }
 
     /**
-     * PUT /api/v1/bills/{id} - Update bill
+     * PUT /api/v1/bills/{id} - Removed.
+     * Bills are generated from orders and must not be mutated directly.
+     * Use PATCH /bills/{id}/cancel to void a bill.
      */
-    @PutMapping("/{id}")
-    fun updateBill(
-        @PathVariable id: Long,
-        @Valid @RequestBody request: BillRequest
-    ): ResponseEntity<ApiResponse<BillResponse>> {
-        logger.info("Updating bill: {}", id)
-        val response = billService.updateBill(id, request)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
-        return ResponseEntity.ok(ApiResponse.success(response, "Bill updated successfully"))
-    }
 
     /**
      * PATCH /api/v1/bills/{id}/paid - Mark bill as paid
@@ -156,33 +146,10 @@ class BillsController(
     }
 
     /**
-     * DELETE /api/v1/bills/{id} - Delete bill
+     * DELETE /api/v1/bills/{id} - Removed.
+     * Hard-deleting bills is a financial audit risk. Use PATCH /bills/{id}/cancel instead.
      */
-    @DeleteMapping("/{id}")
-    fun deleteBill(@PathVariable id: Long): ResponseEntity<ApiResponse<String>> {
-        logger.info("Deleting bill: {}", id)
-        val deleted = billService.deleteBill(id)
-        return if (deleted)
-            ResponseEntity.ok(ApiResponse.success("Bill deleted successfully", "Bill removed"))
-        else
-            ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
-    }
-
-    private fun <T> handleAppException(e: AppException): ResponseEntity<ApiResponse<T>> {
-        return when (e) {
-            is AppException.ResourceNotFoundException ->
-                ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("RESOURCE_NOT_FOUND", e.message ?: "Not found"))
-            is AppException.ValidationException ->
-                ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error("VALIDATION_ERROR", e.message ?: "Validation failed"))
-            is AppException.ConflictException ->
-                ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error("CONFLICT", e.message ?: "Conflict"))
-            else ->
-                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("INTERNAL_ERROR", "Internal server error"))
-        }
-    }
 }
+
+
+

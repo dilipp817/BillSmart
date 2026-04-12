@@ -25,7 +25,25 @@ data class PaymentRequest(
     val referenceNumber: String,
 
     val transactionId: String? = null,
-    val notes: String? = null
+    val notes: String? = null,
+
+    /**
+     * Change returned to the customer for CASH payments.
+     * Set when the customer pays more than the bill total.
+     * Example: bill = ₹450, customer gives ₹500 → change_amount = 50.
+     * For non-cash payments, omit or send 0.
+     */
+    val changeAmount: BigDecimal = BigDecimal.ZERO,
+
+    /**
+     * If true, the payment is immediately marked SUCCESS in the same transaction.
+     * Use this for CASH, UPI, and WALLET payments where success is known at call time.
+     * This collapses the two-step flow (POST → PATCH /process) into a single atomic call,
+     * eliminating the orphaned-PENDING-payment risk on network failure.
+     *
+     * Leave false (default) for CARD payments where you must wait for gateway confirmation.
+     */
+    val autoProcess: Boolean = false
 )
 
 /**
@@ -41,6 +59,8 @@ data class PaymentResponse(
     val transactionId: String? = null,
     val referenceNumber: String,
     val notes: String? = null,
+    /** Change returned to customer. > 0 only for CASH overpayments. */
+    val changeAmount: BigDecimal = BigDecimal.ZERO,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null
 )

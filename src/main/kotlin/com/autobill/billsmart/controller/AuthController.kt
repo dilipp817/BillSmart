@@ -107,18 +107,21 @@ class AuthController(
         }
 
         val token = authHeader.substring(7).trim()
-        val username = jwtTokenProvider.getUsernameFromToken(token)
-        val userId = jwtTokenProvider.getUserIdFromToken(token)
-        val role = jwtTokenProvider.getRoleFromToken(token)
+        val username     = jwtTokenProvider.getUsernameFromToken(token)
+        val userId       = jwtTokenProvider.getUserIdFromToken(token)
+        val role         = jwtTokenProvider.getRoleFromToken(token)
+        val restaurantId = jwtTokenProvider.getRestaurantIdFromToken(token)
 
         return if (username != null && userId != null) {
             log.debug("Token validated successfully for user: {}", username)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    mapOf("valid" to true, "username" to username, "userId" to userId, "role" to (role ?: "staff")),
-                    "Token is valid"
-                )
+            val claims = mutableMapOf<String, Any>(
+                "valid"       to true,
+                "username"    to username,
+                "user_id"     to userId,
+                "role"        to (role ?: "staff")
             )
+            if (restaurantId != null) claims["restaurant_id"] = restaurantId
+            ResponseEntity.ok(ApiResponse.success(claims, "Token is valid"))
         } else {
             log.debug("Token validation failed")
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(

@@ -36,6 +36,14 @@ class Table {
     @Column(nullable = false, length = 50)
     var tableNumber: String = ""
 
+    /**
+     * Floor number where the table is physically located.
+     * Used for table-map UI grouping in multi-floor restaurants.
+     * Column already exists in DB since V7.
+     */
+    @Column(nullable = false)
+    var floor: Int = 1
+
     @Column(nullable = false)
     var capacity: Int = 0
 
@@ -56,6 +64,14 @@ class Table {
 
     @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now()
+
+    /**
+     * Timestamp of the most recent OCCUPIED → AVAILABLE transition.
+     * Null if the table has never been occupied.
+     * Used for turnover reporting and "idle for N minutes" display.
+     */
+    @Column(name = "last_occupied_at")
+    var lastOccupiedAt: LocalDateTime? = null
 
     /**
      * Version field for optimistic locking
@@ -95,6 +111,7 @@ class Table {
      * Mark table as available after order completion
      */
     fun release() {
+        this.lastOccupiedAt = LocalDateTime.now()
         this.currentOrder = null
         this.status = TableStatus.AVAILABLE
         this.updatedAt = LocalDateTime.now()

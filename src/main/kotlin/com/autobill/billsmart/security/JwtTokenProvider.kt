@@ -32,17 +32,24 @@ class JwtTokenProvider {
         signingKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray(Charsets.UTF_8))
     }
 
-    /** Generate a signed JWT for the given user. */
-    fun generateToken(username: String, userId: Long, role: String): String {
+    /**
+     * Generate a signed JWT for the given user.
+     *
+     * @param restaurantId The outlet this user belongs to.
+     *   Pass null for super_admin accounts that span all outlets.
+     *   The claim is embedded so every authenticated request can verify
+     *   multi-tenant access without an extra DB lookup.
+     */
+    fun generateToken(username: String, userId: Long, role: String, restaurantId: Long?): String {
         val now = Date()
-        return Jwts.builder()
+        val builder = Jwts.builder()
             .subject(username)
             .claim("userId", userId)
             .claim("role", role)
             .issuedAt(now)
             .expiration(Date(now.time + jwtExpirationMs))
-            .signWith(signingKey)          // HS256 inferred from 32-byte key
-            .compact()
+        if (restaurantId != null) builder.claim("restaurantId", restaurantId)
+        return builder.signWith(signingKey).compact()
     }
 
     /** Extract username (subject) from token; returns null if invalid/expired. */
@@ -61,6 +68,15 @@ class JwtTokenProvider {
     /** Extract role claim from token; returns null if invalid/expired. */
     fun getRoleFromToken(token: String): String? = runCatching {
         parseClaims(token).get("role", String::class.java)
+    }.getOrNull()
+
+    /**
+     * Extract restaurantId claim from token.
+     * Returns null for super_admin tokens (claim absent) or if token is invalid.
+     */
+    fun getRestaurantIdFromToken(token: String): Long? = runCatching {
+        val raw = parseClaims(token)["restaurantId"] ?: return@runCatching null
+        (raw as? Number)?.toLong()
     }.getOrNull()
 
     /** Returns true iff the token signature is valid and it has not expired. */

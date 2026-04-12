@@ -3,6 +3,7 @@ package com.autobill.billsmart.services.impl
 import com.autobill.billsmart.dto.*
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.mappers.PaymentMapper
+import com.autobill.billsmart.model.Bill
 import com.autobill.billsmart.model.Payment
 import com.autobill.billsmart.repositories.BillRepository
 import com.autobill.billsmart.repositories.OrderRepository
@@ -61,10 +62,14 @@ class PaymentServiceImpl(
                 AppException.ResourceNotFoundException("Order not found: ${request.orderId}")
             }
 
-        // Check idempotency - prevent duplicate payments
+        // Idempotency guard — deduplicate on ANY existing status, not just SUCCESS.
+        // Scenario: mobile POSTs → network dies before response → mobile retries with same
+        // reference_number. Without this guard, a second PENDING payment would be created
+        // and both could be processed → double charge.
         val existingPayment = paymentRepository.findByReferenceNumber(request.referenceNumber)
-        if (existingPayment != null && existingPayment.status == "SUCCESS") {
-            logger.warn("Payment already processed for reference: {}", request.referenceNumber)
+        if (existingPayment != null) {
+            logger.warn("Duplicate payment request for reference: {} (existing status: {})",
+                request.referenceNumber, existingPayment.status)
             return paymentMapper.toResponse(existingPayment)
         }
 
@@ -99,10 +104,24 @@ class PaymentServiceImpl(
             this.transactionId = request.transactionId
             this.referenceNumber = request.referenceNumber
             this.notes = request.notes
+            this.changeAmount = request.changeAmount
         }
 
         val saved = paymentRepository.save(payment)
         logger.info("Payment created - id: {}, reference: {}, amount: {}", saved.id, saved.referenceNumber, saved.amount)
+
+        // auto_process=true: collapse PENDING → SUCCESS into a single atomic call.
+        // Use for CASH / UPI / WALLET where success is known at request time.
+        if (request.autoProcess) {
+            saved.markAsSuccess()
+            val processed = paymentRepository.save(saved)
+            if (processed.bill != null) {
+                updateBillStatusAfterPayment(processed)
+            }
+            logger.info("Payment auto-processed to SUCCESS - id: {}", processed.id)
+            return paymentMapper.toResponse(processed)
+        }
+
         return paymentMapper.toResponse(saved)
     }
 
@@ -201,9 +220,9 @@ class PaymentServiceImpl(
         payment.notes = request.notes ?: payment.notes
         payment.updatedAt = LocalDateTime.now()
 
-        // If payment successful and bill exists, mark bill as paid
+        // If payment successful and bill exists, set bill status based on cumulative amount paid
         if (request.status == "SUCCESS" && payment.bill != null) {
-            payment.bill?.markAsPaid()
+            updateBillStatusAfterPayment(payment)
         }
 
         val updated = paymentRepository.save(payment)
@@ -227,8 +246,10 @@ class PaymentServiceImpl(
 
         payment.markAsSuccess()
 
-        // Update associated bill if exists
-        payment.bill?.markAsPaid()
+        // Update associated bill based on cumulative amount paid
+        if (payment.bill != null) {
+            updateBillStatusAfterPayment(payment)
+        }
 
         val updated = paymentRepository.save(payment)
         logger.info("Payment processed successfully: {}", id)
@@ -286,6 +307,33 @@ class PaymentServiceImpl(
         )
 
         return validTransitions[current]?.contains(new) ?: false
+    }
+
+    /**
+     * After marking a payment as SUCCESS, compute total amount paid against the bill
+     * (previous SUCCESS payments + this payment) and set bill status accordingly:
+     *  - total paid >= bill total  →  PAID
+     *  - total paid <  bill total  →  PARTIAL
+     */
+    private fun updateBillStatusAfterPayment(payment: Payment) {
+        val bill = payment.bill ?: return
+        val billId = bill.id ?: return
+
+        // Sum of all previously confirmed payments for this bill (excluding the current one
+        // which is not yet persisted as SUCCESS in the DB)
+        val previouslyPaid = paymentRepository.findByBillIdOrderByCreatedAtDesc(billId)
+            .filter { it.status == "SUCCESS" && it.id != payment.id }
+            .fold(BigDecimal.ZERO) { acc, p -> acc + p.amount }
+
+        val totalPaid = previouslyPaid + payment.amount
+
+        if (totalPaid >= bill.totalAmount) {
+            bill.markAsPaid()
+            logger.info("Bill {} fully paid — total paid: {}, bill total: {}", billId, totalPaid, bill.totalAmount)
+        } else {
+            bill.markAsPartial()
+            logger.info("Bill {} partially paid — paid so far: {}, bill total: {}", billId, totalPaid, bill.totalAmount)
+        }
     }
 }
 

@@ -183,9 +183,9 @@ class BillServiceImpl(
                 AppException.ResourceNotFoundException("Bill not found: $id")
             }
 
-        if (bill.status != "ISSUED") {
+        if (bill.status != "ISSUED" && bill.status != "PARTIAL") {
             logger.warn("Bill cannot be marked as paid - current status: {}", bill.status)
-            throw AppException.ValidationException("Bill must be in ISSUED status to mark as paid")
+            throw AppException.ValidationException("Bill must be in ISSUED or PARTIAL status to mark as paid")
         }
 
         bill.markAsPaid()
@@ -296,7 +296,7 @@ class BillServiceImpl(
     // ==================== UTILITY METHODS ====================
 
     private fun isValidBillStatus(status: String): Boolean {
-        return status in listOf("ISSUED", "PAID", "CANCELLED")
+        return status in listOf("ISSUED", "PARTIAL", "PAID", "CANCELLED")
     }
 
     /**

@@ -29,23 +29,33 @@ class DataInitializer(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    data class SeedUser(val username: String, val email: String, val rawPassword: String, val role: String)
+    data class SeedUser(
+        val username: String,
+        val email: String,
+        val rawPassword: String,
+        val role: String,
+        /** Which outlet this account belongs to. null = super_admin spanning all outlets. */
+        val restaurantId: Long? = null
+    )
 
     private val seedUsers = listOf(
-        SeedUser("admin",  "admin@billsmart.com",  "admin123", "admin"),
-        SeedUser("staff1", "staff1@billsmart.com", "staff123", "staff"),
-        SeedUser("staff2", "staff2@billsmart.com", "staff123", "staff")
+        // restaurant_id=1 → Spice Garden Bangalore (first seeded restaurant)
+        SeedUser("admin",  "admin@billsmart.com",  "admin123", "admin", restaurantId = 1L),
+        SeedUser("staff1", "staff1@billsmart.com", "staff123", "staff", restaurantId = 1L),
+        // restaurant_id=2 → The Burger House Mumbai
+        SeedUser("staff2", "staff2@billsmart.com", "staff123", "staff", restaurantId = 2L)
     )
 
     override fun run(args: ApplicationArguments) {
         seedUsers.forEach { seed ->
             if (userRepository.findByUsername(seed.username) == null) {
                 userRepository.save(User(
-                    username = seed.username,
-                    email = seed.email,
-                    password = passwordEncoder.encode(seed.rawPassword),
-                    role = seed.role,
-                    isActive = true
+                    username     = seed.username,
+                    email        = seed.email,
+                    password     = passwordEncoder.encode(seed.rawPassword),
+                    role         = seed.role,
+                    isActive     = true,
+                    restaurantId = seed.restaurantId
                 ))
                 log.info("Seeded user: {} (role: {})", seed.username, seed.role)
             } else {

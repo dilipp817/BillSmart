@@ -23,6 +23,7 @@ interface OrderMapper {
     @Mapping(target = "restaurantId", source = "restaurant.restroId")
     @Mapping(target = "tableId", source = "table.id")
     @Mapping(target = "tableNumber", source = "table.tableNumber")
+    @Mapping(target = "subtotal", source = "totalAmount")
     fun toResponse(order: Order): OrderResponse
 
     /**

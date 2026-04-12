@@ -67,6 +67,13 @@ class Payment {
     @Suppress("unused")
     var notes: String? = null
 
+    /**
+     * Change returned to customer for cash payments.
+     * change_amount = amount_tendered - bill_total (only > 0 for CASH overpayments).
+     */
+    @Column(name = "change_amount", nullable = false)
+    var changeAmount: BigDecimal = BigDecimal.ZERO
+
     @Version
     var version: Long? = null
 

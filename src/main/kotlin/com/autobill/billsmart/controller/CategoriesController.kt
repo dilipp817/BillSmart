@@ -40,7 +40,7 @@ class CategoriesController(
      */
     @GetMapping
     fun getCategories(
-        @RequestParam restaurantId: Long
+        @RequestParam(name = "restaurant_id") restaurantId: Long
     ): ResponseEntity<ApiResponse<List<CategoryResponse>>> {
         log.info("Getting categories for restaurant: {}", restaurantId)
 
@@ -82,7 +82,7 @@ class CategoriesController(
      */
     @PostMapping
     fun createCategory(
-        @RequestParam restaurantId: Long,
+        @RequestParam(name = "restaurant_id") restaurantId: Long,
         @Valid @RequestBody request: CategoryRequest
     ): ResponseEntity<ApiResponse<CategoryResponse>> {
         log.info("Creating category for restaurant: {}", restaurantId)

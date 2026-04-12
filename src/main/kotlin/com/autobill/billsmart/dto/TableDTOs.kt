@@ -20,6 +20,9 @@ data class TableRequest(
     @field:Positive(message = "Capacity must be greater than 0")
     val capacity: Int,
 
+    /** Floor number (1-based). Defaults to 1 for single-floor restaurants. */
+    val floor: Int = 1,
+
     val status: TableStatus? = TableStatus.AVAILABLE
 )
 
@@ -35,9 +38,17 @@ data class TableResponse(
     val id: Long,
     val restaurantId: Long,
     val tableNumber: String,
+    /** Floor number (1-based). Used for table-map UI in multi-floor restaurants. */
+    val floor: Int,
     val capacity: Int,
     val status: TableStatus,
     val currentOrderId: Long? = null,
+    /**
+     * Timestamp of the most recent OCCUPIED → AVAILABLE transition.
+     * Null if the table has never been occupied.
+     * Use this for "idle for N minutes" display and turnover reporting.
+     */
+    val lastOccupiedAt: LocalDateTime? = null,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val version: Long = 0

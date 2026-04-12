@@ -313,7 +313,7 @@ class TablesController(
     fun updateTableStatus(
         @PathVariable restaurantId: Long,
         @PathVariable id: Long,
-        @RequestParam newStatus: TableStatus
+        @RequestParam(name = "new_status") newStatus: TableStatus
     ): ResponseEntity<ApiResponse<TableResponse>> {
         logger.info("PATCH: Update table status - ID: {}, newStatus: {}", id, newStatus)
 

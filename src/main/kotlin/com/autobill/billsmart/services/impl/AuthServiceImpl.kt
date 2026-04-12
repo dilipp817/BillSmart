@@ -42,18 +42,24 @@ class AuthServiceImpl(
             throw AppException.UnauthorizedException("Invalid username or password")
         }
 
-        val token = jwtTokenProvider.generateToken(user.username, user.id!!, user.role)
+        val token = jwtTokenProvider.generateToken(
+            username    = user.username,
+            userId      = user.id!!,
+            role        = user.role,
+            restaurantId = user.restaurantId   // embedded in JWT for multi-tenant checks
+        )
         val expiresIn = jwtTokenProvider.getExpirationTimeInSeconds()
 
-        log.info("Login successful for user: {}", request.username)
+        log.info("Login successful for user: {} (restaurantId={})", request.username, user.restaurantId)
 
         return LoginResponse(
-            id = user.id!!,
-            username = user.username,
-            email = user.email,
-            role = user.role,
-            token = token,
-            expiresIn = expiresIn
+            id           = user.id!!,
+            username     = user.username,
+            email        = user.email,
+            role         = user.role,
+            restaurantId = user.restaurantId,  // mobile team saves this and uses for all calls
+            token        = token,
+            expiresIn    = expiresIn
         )
     }
 
@@ -65,11 +71,12 @@ class AuthServiceImpl(
             ?: return null
 
         return UserInfoResponse(
-            id = user.id!!,
-            username = user.username,
-            email = user.email,
-            role = user.role,
-            isActive = user.isActive
+            id           = user.id!!,
+            username     = user.username,
+            email        = user.email,
+            role         = user.role,
+            isActive     = user.isActive,
+            restaurantId = user.restaurantId
         )
     }
 

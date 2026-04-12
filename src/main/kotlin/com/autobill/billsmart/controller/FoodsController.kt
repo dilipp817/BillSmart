@@ -42,11 +42,11 @@ class FoodsController(
     fun getAllFoods(
         @RequestParam(defaultValue = "0") @Min(0) offset: Int,
         @RequestParam(defaultValue = "20") @Positive @Max(100) limit: Int,
-        @RequestParam(required = false) restaurantId: Long?,
-        @RequestParam(required = false) categoryId: Long?,
+        @RequestParam(name = "restaurant_id", required = false) restaurantId: Long?,
+        @RequestParam(name = "category_id", required = false) categoryId: Long?,
         @RequestParam(required = false) search: String?,
-        @RequestParam(required = false) isVegetarian: Boolean?,
-        @RequestParam(required = false) isSpicy: Boolean?,
+        @RequestParam(name = "is_vegetarian", required = false) isVegetarian: Boolean?,
+        @RequestParam(name = "is_spicy", required = false) isSpicy: Boolean?,
         @RequestParam(required = false) sort: String?
     ): ResponseEntity<ApiResponse<PaginatedResponse<FoodListItem>>> {
         log.info("Getting foods - offset: {}, limit: {}, restaurantId: {}, search: {}", offset, limit, restaurantId, search)
@@ -165,11 +165,11 @@ class FoodsController(
     @GetMapping("/search")
     fun searchFoods(
         @RequestParam(required = false) q: String?,
-        @RequestParam(required = false) restaurantId: Long?,
-        @RequestParam(required = false) categoryId: Long?,
-        @RequestParam(required = false) isVegetarian: Boolean?,
-        @RequestParam(required = false) isSpicy: Boolean?,
-        @RequestParam(required = false) isAvailable: Boolean?,
+        @RequestParam(name = "restaurant_id", required = false) restaurantId: Long?,
+        @RequestParam(name = "category_id", required = false) categoryId: Long?,
+        @RequestParam(name = "is_vegetarian", required = false) isVegetarian: Boolean?,
+        @RequestParam(name = "is_spicy", required = false) isSpicy: Boolean?,
+        @RequestParam(name = "is_available", required = false) isAvailable: Boolean?,
         @RequestParam(defaultValue = "0") @Min(0) offset: Int,
         @RequestParam(defaultValue = "20") @Positive @Max(100) limit: Int
     ): ResponseEntity<ApiResponse<PaginatedResponse<FoodListItem>>> {

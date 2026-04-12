@@ -20,8 +20,8 @@ data class CreateOrderRequest(
     @field:Valid
     val items: List<OrderItemRequest>,
 
-    /** OFFLINE = dine-in, ONLINE = delivery/takeaway. Defaults to OFFLINE. */
-    val orderType: String = "OFFLINE",
+    /** DINE_IN = at table, TAKEAWAY = customer collects, DELIVERY = we deliver. Defaults to DINE_IN. */
+    val orderType: String = "DINE_IN",
 
     val notes: String? = null
 )
@@ -72,6 +72,8 @@ data class OrderResponse(
     val status: OrderStatus,
     val orderType: String,
     val items: List<OrderItemResponse>,
+    /** Pre-tax sum of all item subtotals. Same value as total_amount at the order stage. */
+    val subtotal: BigDecimal,
     val totalAmount: BigDecimal,
     val notes: String? = null,
     val createdAt: LocalDateTime,

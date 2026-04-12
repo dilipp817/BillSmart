@@ -97,6 +97,14 @@ class Bill {
     }
 
     /**
+     * Mark bill as partially paid (some payment received, balance outstanding)
+     */
+    fun markAsPartial() {
+        status = "PARTIAL"
+        updatedAt = LocalDateTime.now()
+    }
+
+    /**
      * Cancel bill
      */
     @Suppress("unused")
@@ -106,7 +114,8 @@ class Bill {
     }
 
     /**
-     * Check if bill can be modified
+     * Check if bill can be modified (add/remove items, update amounts)
+     * Only ISSUED bills can be modified — once any payment is received, the bill is locked.
      */
     @Suppress("unused")
     fun canBeModified(): Boolean {

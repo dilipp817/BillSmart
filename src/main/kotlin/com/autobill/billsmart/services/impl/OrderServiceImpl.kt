@@ -69,7 +69,7 @@ class OrderServiceImpl(
         order.table = table
         order.orderNumber = generateOrderNumber()
         order.orderType = request.orderType.uppercase().let {
-            if (it in listOf("OFFLINE", "ONLINE")) it else "OFFLINE"
+            if (it in listOf("DINE_IN", "TAKEAWAY", "DELIVERY")) it else "DINE_IN"
         }
         order.notes = request.notes
 
@@ -299,6 +299,10 @@ class OrderServiceImpl(
         item.updateStatus(newStatus)
         orderItemRepository.save(item)
 
+        // Auto-complete the order if all items have reached a final state.
+        // This removes the dependency on kitchen staff manually updating order status via KDS.
+        autoCompleteOrderIfAllItemsFinal(order)
+
         val updated = orderRepository.save(order)
         logger.info("Item status updated - itemId: {}, newStatus: {}", itemId, newStatus)
         return orderMapper.toResponse(updated)
@@ -376,6 +380,38 @@ class OrderServiceImpl(
     }
 
     // ==================== HELPER METHODS ====================
+
+    /**
+     * Auto-complete order when all items reach a final item_status.
+     *
+     * Trigger: every call to updateItemStatus().
+     * Condition: ALL items are in {READY, SERVED, CANCELLED}
+     *            AND at least one item is READY or SERVED (not every item cancelled).
+     * Action: order.status → COMPLETED (bypasses transition guard — this is server-managed).
+     *
+     * This removes the operational dependency on kitchen staff manually pressing
+     * "Mark Order Complete" on the KDS after all items are done.
+     */
+    private fun autoCompleteOrderIfAllItemsFinal(order: Order) {
+        val items = order.items
+        if (items.isEmpty()) return
+
+        val finalStatuses = setOf("READY", "SERVED", "CANCELLED")
+        val allFinal = items.all { it.itemStatus in finalStatuses }
+        val hasActiveItem = items.any { it.itemStatus in setOf("READY", "SERVED") }
+        val alreadyFinal = order.status in listOf(
+            OrderStatus.COMPLETED, OrderStatus.DELIVERED, OrderStatus.CANCELLED
+        )
+
+        if (allFinal && hasActiveItem && !alreadyFinal) {
+            order.status = OrderStatus.COMPLETED
+            order.updatedAt = LocalDateTime.now()
+            logger.info(
+                "Order {} auto-completed — all {} items are in a final state",
+                order.id, items.size
+            )
+        }
+    }
 
     /**
      * Generate unique order number
