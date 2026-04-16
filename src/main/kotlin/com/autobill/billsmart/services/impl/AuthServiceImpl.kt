@@ -50,6 +50,7 @@ class AuthServiceImpl(
             restaurantId = user.restaurantId   // embedded in JWT for multi-tenant checks
         )
         val expiresIn = jwtTokenProvider.getExpirationTimeInSeconds()
+        val expiresAt = System.currentTimeMillis() / 1000 + expiresIn
 
         log.info("Login successful for user: {} (restaurantId={})", request.username, user.restaurantId)
 
@@ -60,7 +61,8 @@ class AuthServiceImpl(
             role         = user.role,
             restaurantId = user.restaurantId,  // mobile team saves this and uses for all calls
             token        = token,
-            expiresIn    = expiresIn
+            expiresIn    = expiresIn,
+            expiresAt    = expiresAt           // absolute epoch seconds — mobile stores and checks this
         )
     }
 

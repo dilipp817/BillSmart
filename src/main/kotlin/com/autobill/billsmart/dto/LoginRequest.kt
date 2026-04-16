@@ -43,7 +43,19 @@ data class LoginResponse(
     /** Which outlet this user belongs to. null only for super_admin. */
     val restaurantId: Long?,
     val token: String,
-    val expiresIn: Long = 86400 // 24 hours in seconds
+    /** Token lifetime in seconds from the moment of login. Always 86400 (24 h). */
+    val expiresIn: Long = 86400,
+    /**
+     * Absolute Unix epoch timestamp (seconds) when this token expires.
+     * expiresAt = loginTime + expiresIn.
+     *
+     * Mobile must store this and check it on every app foreground/resume.
+     * If (now > expiresAt - 300) → call POST /auth/validate proactively
+     * so the user is never kicked mid-shift by a silent 401.
+     *
+     * Example: 1713312000 = 2026-04-16T22:00:00Z
+     */
+    val expiresAt: Long = System.currentTimeMillis() / 1000 + 86400
 )
 
 /**
