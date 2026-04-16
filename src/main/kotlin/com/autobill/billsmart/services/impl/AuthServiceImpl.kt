@@ -42,9 +42,10 @@ class AuthServiceImpl(
             throw AppException.UnauthorizedException("Invalid username or password")
         }
 
+        val userId = user.id ?: throw AppException.ResourceNotFoundException("User ID is unexpectedly null")
         val token = jwtTokenProvider.generateToken(
             username    = user.username,
-            userId      = user.id!!,
+            userId      = userId,
             role        = user.role,
             restaurantId = user.restaurantId   // embedded in JWT for multi-tenant checks
         )
@@ -53,7 +54,7 @@ class AuthServiceImpl(
         log.info("Login successful for user: {} (restaurantId={})", request.username, user.restaurantId)
 
         return LoginResponse(
-            id           = user.id!!,
+            id           = userId,
             username     = user.username,
             email        = user.email,
             role         = user.role,
@@ -71,7 +72,7 @@ class AuthServiceImpl(
             ?: return null
 
         return UserInfoResponse(
-            id           = user.id!!,
+            id           = user.id ?: return null,
             username     = user.username,
             email        = user.email,
             role         = user.role,
