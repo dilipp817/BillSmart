@@ -13,9 +13,10 @@ import org.springframework.web.bind.annotation.*
 /**
  * RestaurantController
  *
- * GET  /api/v1/restaurants          → list all restaurants (use this to find your restaurant_id)
- * GET  /api/v1/restaurants/{id}     → get one restaurant by ID
- * POST /api/v1/restaurants          → create a new restaurant
+ * GET   /api/v1/restaurants          → list all restaurants (use this to find your restaurant_id)
+ * GET   /api/v1/restaurants/{id}     → get one restaurant by ID
+ * POST  /api/v1/restaurants          → create a new restaurant
+ * PATCH /api/v1/restaurants/{id}     → update restaurant details and settings
  */
 @RestController
 @RequestMapping("/api/v1/restaurants")
@@ -61,6 +62,21 @@ class RestaurantController(
         val restaurant = restaurantService.createRestaurant(request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(restaurantService.toResponse(restaurant), "Restaurant created successfully"))
+    }
+
+    /**
+     * PATCH /api/v1/restaurants/{id}
+     * Updates restaurant details (name, manager, address).
+     * Restricted to ADMIN role (enforced in SecurityConfig).
+     */
+    @PatchMapping("/{id}")
+    fun updateRestaurant(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: RestaurantRequest
+    ): ResponseEntity<ApiResponse<RestaurantResponse>> {
+        log.info("PATCH update restaurant id={}", id)
+        val restaurant = restaurantService.updateRestaurant(id, request)
+        return ResponseEntity.ok(ApiResponse.success(restaurantService.toResponse(restaurant), "Restaurant updated successfully"))
     }
 }
 

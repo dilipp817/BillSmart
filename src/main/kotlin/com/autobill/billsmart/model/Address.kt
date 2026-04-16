@@ -16,7 +16,7 @@ class Address(
 
     @field:NotBlank
     @Column(name = "store_location", nullable = false)
-    var storelocation: String = "",
+    var location: String = "",
 
     @field:NotBlank
     @Column(name = "zip_code", nullable = false)

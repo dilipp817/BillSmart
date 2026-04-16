@@ -8,6 +8,6 @@ interface RestaurantService {
     fun createRestaurant(req: RestaurantRequest): Restaurant
     fun getRestaurant(id: Long): Restaurant?
     fun getAllRestaurants(): List<Restaurant>
+    fun updateRestaurant(id: Long, req: RestaurantRequest): Restaurant
     fun toResponse(r: Restaurant): RestaurantResponse
 }
-

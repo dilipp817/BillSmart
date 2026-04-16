@@ -326,6 +326,16 @@ class BillServiceImpl(
     override fun generateBillForOrder(orderId: Long, discountAmount: BigDecimal): BillResponse {
         logger.debug("Auto-generating bill for order: {}", orderId)
 
+        // Only MANAGER and ADMIN can apply discounts — staff cannot.
+        if (discountAmount > BigDecimal.ZERO) {
+            val auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().authentication
+            val role = auth?.authorities?.firstOrNull()?.authority ?: "ROLE_STAFF"
+            if (role == "ROLE_STAFF") {
+                throw AppException.ValidationException("Staff are not authorised to apply discounts")
+            }
+        }
+
         val order = orderRepository.findById(orderId)
             .orElseThrow {
                 logger.error("Order not found: {}", orderId)

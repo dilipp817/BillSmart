@@ -45,9 +45,11 @@ class SecurityConfig(
 
                     // ── Restaurant management — ADMIN only ──────────────────────────────────
                     // GET /restaurants lists ALL tenants (cross-tenant); POST creates a new one.
-                    // Neither is a POS operation — restrict to admin to prevent misuse.
+                    // PATCH updates restaurant details and settings.
+                    // None are POS operations — restrict to admin to prevent misuse.
                     .requestMatchers(HttpMethod.GET, "/api/v1/restaurants").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/v1/restaurants").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/api/v1/restaurants/*").hasRole("ADMIN")
 
                     // ── Category mutations — ADMIN only ─────────────────────────────────────
                     // GET /categories is open to any authenticated role (staff needs it for menu).
@@ -57,8 +59,10 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.DELETE, "/api/v1/categories/**").hasRole("ADMIN")
 
                     // ── Food mutations — ADMIN only ──────────────────────────────────────────
-                    // Creating/editing menu items is an admin task; staff only reads the menu.
+                    // Creating/editing/toggling menu items is an admin task; staff only reads the menu.
                     .requestMatchers(HttpMethod.POST, "/api/v1/foods/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PUT, "/api/v1/foods/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/api/v1/foods/**").hasRole("ADMIN")
 
                     // ── Table mutations — MANAGER or ADMIN ──────────────────────────────────
                     // Staff reads tables; managers/admins create, rename, or remove them.

@@ -12,9 +12,9 @@ data class AddressRequest(
     @field:Size(min = 1, max = 255, message = "Street must be between 1 and 255 characters")
     val street: String,
 
-    @field:NotBlank(message = "Store location is required")
-    @field:Size(min = 1, max = 255, message = "Store location must be between 1 and 255 characters")
-    val storelocation: String,
+    @field:NotBlank(message = "Location is required")
+    @field:Size(min = 1, max = 255, message = "Location must be between 1 and 255 characters")
+    val location: String,
 
     @field:NotBlank(message = "ZIP code is required")
     @field:Size(min = 4, max = 10, message = "ZIP code must be between 4 and 10 characters")
