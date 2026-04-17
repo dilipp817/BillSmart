@@ -17,10 +17,14 @@ interface BillMapper {
 
     /**
      * Convert Bill Entity to BillResponse DTO
+     * paidAmount and remainingAmount are intentionally unmapped here —
+     * they are computed from payments by BillServiceImpl.enrichWithPaymentTotals() (B-NEW-1)
      */
     @Mapping(target = "restaurantName", source = "restaurant.outletName")
     @Mapping(target = "orderId", source = "order.id")
     @Mapping(target = "restaurantId", source = "restaurant.restroId")
+    @Mapping(target = "paidAmount", ignore = true)
+    @Mapping(target = "remainingAmount", ignore = true)
     fun toResponse(bill: Bill): BillResponse
 
     /**
