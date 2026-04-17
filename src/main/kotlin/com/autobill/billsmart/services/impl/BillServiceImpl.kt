@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 /**
@@ -382,8 +383,10 @@ class BillServiceImpl(
      */
     fun calculateTaxes(subtotal: BigDecimal): TaxCalculation {
         val taxRate = BigDecimal("18") // 18% total
-        val totalTax = subtotal * taxRate / BigDecimal("100")
-        val halfTax = totalTax / BigDecimal("2") // 9% each
+        val totalTax = (subtotal * taxRate / BigDecimal("100"))
+            .setScale(2, RoundingMode.HALF_UP)
+        val halfTax = (totalTax / BigDecimal("2"))
+            .setScale(2, RoundingMode.HALF_UP)
 
         return TaxCalculation(
             totalTax = totalTax,
