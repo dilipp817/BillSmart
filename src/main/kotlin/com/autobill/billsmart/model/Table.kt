@@ -125,6 +125,8 @@ class Table {
      * @throws IllegalArgumentException if status transition is invalid
      */
     fun updateStatus(newStatus: TableStatus) {
+        if (newStatus == this.status) return  // idempotent self-transition — B-D01
+
         // Validate status transitions
         val validTransitions: List<TableStatus> = when (status) {
             TableStatus.AVAILABLE -> listOf(TableStatus.OCCUPIED, TableStatus.RESERVED, TableStatus.CLEANING)
