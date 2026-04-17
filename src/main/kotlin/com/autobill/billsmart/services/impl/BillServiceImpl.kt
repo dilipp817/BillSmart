@@ -8,6 +8,7 @@ import com.autobill.billsmart.model.BillItem
 import com.autobill.billsmart.repositories.BillItemRepository
 import com.autobill.billsmart.repositories.BillRepository
 import com.autobill.billsmart.repositories.OrderRepository
+import com.autobill.billsmart.repositories.PaymentRepository
 import com.autobill.billsmart.repositories.RestaurantRepository
 import com.autobill.billsmart.services.BillService
 import org.slf4j.LoggerFactory
@@ -46,6 +47,7 @@ class BillServiceImpl(
     private val billItemRepository: BillItemRepository,
     private val orderRepository: OrderRepository,
     private val restaurantRepository: RestaurantRepository,
+    private val paymentRepository: PaymentRepository,   // B-NEW-1
     private val billMapper: BillMapper
 ) : BillService {
 
@@ -99,7 +101,7 @@ class BillServiceImpl(
 
         val saved = billRepository.save(bill)
         logger.info("Bill created successfully: billNumber={}, id={}", saved.billNumber, saved.id)
-        return billMapper.toResponse(saved)
+        return enrichWithPaymentTotals(billMapper.toResponse(saved))
     }
 
     // ==================== READ OPERATIONS ====================
@@ -108,7 +110,7 @@ class BillServiceImpl(
     override fun getBillById(id: Long): BillResponse? {
         logger.debug("Fetching bill: {}", id)
         return billRepository.findById(id)
-            .map { billMapper.toResponse(it) }
+            .map { enrichWithPaymentTotals(billMapper.toResponse(it)) }
             .orElse(null)
     }
 
@@ -116,7 +118,7 @@ class BillServiceImpl(
     override fun getBillByNumber(billNumber: String): BillResponse? {
         logger.debug("Fetching bill by number: {}", billNumber)
         return billRepository.findByBillNumber(billNumber)
-            ?.let { billMapper.toResponse(it) }
+            ?.let { enrichWithPaymentTotals(billMapper.toResponse(it)) }
     }
 
     @Transactional(readOnly = true)
@@ -172,7 +174,7 @@ class BillServiceImpl(
 
         val updated = billRepository.save(bill)
         logger.info("Bill updated: {}", id)
-        return billMapper.toResponse(updated)
+        return enrichWithPaymentTotals(billMapper.toResponse(updated))
     }
 
     override fun markBillAsPaid(id: Long): BillResponse? {
@@ -192,7 +194,7 @@ class BillServiceImpl(
         bill.markAsPaid()
         val updated = billRepository.save(bill)
         logger.info("Bill marked as paid: {}", id)
-        return billMapper.toResponse(updated)
+        return enrichWithPaymentTotals(billMapper.toResponse(updated))
     }
 
     override fun cancelBill(id: Long): BillResponse? {
@@ -212,7 +214,7 @@ class BillServiceImpl(
         bill.cancel()
         val updated = billRepository.save(bill)
         logger.info("Bill cancelled: {}", id)
-        return billMapper.toResponse(updated)
+        return enrichWithPaymentTotals(billMapper.toResponse(updated))
     }
 
     // ==================== BILL ITEMS OPERATIONS ====================
@@ -244,7 +246,7 @@ class BillServiceImpl(
         bill.updatedAt = LocalDateTime.now()
         val updated = billRepository.save(bill)
         logger.info("Added {} items to bill: {}", items.size, billId)
-        return billMapper.toResponse(updated)
+        return enrichWithPaymentTotals(billMapper.toResponse(updated))
     }
 
     override fun removeBillItem(billId: Long, itemId: Long): BillResponse? {
@@ -270,7 +272,7 @@ class BillServiceImpl(
         bill.updatedAt = LocalDateTime.now()
         val updated = billRepository.save(bill)
         logger.info("Removed item {} from bill: {}", itemId, billId)
-        return billMapper.toResponse(updated)
+        return enrichWithPaymentTotals(billMapper.toResponse(updated))
     }
 
     // ==================== DELETE OPERATIONS ====================
@@ -375,7 +377,7 @@ class BillServiceImpl(
 
         val saved = billRepository.save(bill)
         logger.info("Bill auto-generated: billNumber={}, total={}", saved.billNumber, saved.totalAmount)
-        return billMapper.toResponse(saved)
+        return enrichWithPaymentTotals(billMapper.toResponse(saved))
     }
 
     /**
@@ -392,6 +394,44 @@ class BillServiceImpl(
             totalTax = totalTax,
             cgst = halfTax,
             sgst = halfTax
+        )
+    }
+
+    /**
+     * Enriches a BillResponse with live paid_amount and remaining_amount
+     * computed from SUCCESS payments for this bill. (B-NEW-1)
+     *
+     * Called on all detail-endpoint responses. NOT called for BillListResponse
+     * (lightweight list DTO — intentionally excludes these fields).
+     */
+    private fun enrichWithPaymentTotals(response: BillResponse): BillResponse {
+        val paidAmount = paymentRepository
+            .findByBillIdOrderByCreatedAtDesc(response.id)
+            .filter { it.status == "SUCCESS" }
+            .map { it.amount }
+            .fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+            .setScale(2, RoundingMode.HALF_UP)
+        val remainingAmount = (response.totalAmount - paidAmount)
+            .max(BigDecimal.ZERO)
+            .setScale(2, RoundingMode.HALF_UP)
+        return BillResponse(
+            id = response.id,
+            billNumber = response.billNumber,
+            orderId = response.orderId,
+            restaurantId = response.restaurantId,
+            restaurantName = response.restaurantName,
+            subtotal = response.subtotal,
+            taxAmount = response.taxAmount,
+            cgstAmount = response.cgstAmount,
+            sgstAmount = response.sgstAmount,
+            discountAmount = response.discountAmount,
+            totalAmount = response.totalAmount,
+            status = response.status,
+            paidAmount = paidAmount,
+            remainingAmount = remainingAmount,
+            billItems = response.billItems,
+            createdAt = response.createdAt,
+            updatedAt = response.updatedAt
         )
     }
 

@@ -43,6 +43,10 @@ data class BillResponse(
     val discountAmount: BigDecimal,
     val totalAmount: BigDecimal,
     val status: String,
+    /** Sum of all SUCCESS payments for this bill. Populated by BillServiceImpl.enrichWithPaymentTotals(). (B-NEW-1) */
+    val paidAmount: BigDecimal = BigDecimal.ZERO,
+    /** totalAmount - paidAmount, floored at 0.00. Populated by BillServiceImpl.enrichWithPaymentTotals(). (B-NEW-1) */
+    val remainingAmount: BigDecimal = BigDecimal.ZERO,
     val billItems: List<BillItemResponse> = emptyList(),
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null
