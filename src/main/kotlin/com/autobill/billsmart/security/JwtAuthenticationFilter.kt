@@ -41,8 +41,11 @@ class JwtAuthenticationFilter(
                 if (username != null) {
                     val authorities = listOf(SimpleGrantedAuthority("ROLE_${role.uppercase()}"))
                     val auth = UsernamePasswordAuthenticationToken(username, null, authorities)
+                    // Store restaurantId from JWT claims so controllers can read it for
+                    // tenant-scoping without an extra DB lookup. Null for super_admin tokens. (B-NEW-2)
+                    auth.details = jwtTokenProvider.getRestaurantIdFromToken(token)
                     SecurityContextHolder.getContext().authentication = auth
-                    log.debug("JWT authenticated user '{}' with role '{}'", username, role)
+                    log.debug("JWT authenticated user '{}' with role '{}' restaurantId '{}'", username, role, auth.details)
                 }
             } else {
                 log.debug("Invalid or expired JWT token on request to {}", request.requestURI)
