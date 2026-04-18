@@ -36,6 +36,8 @@ services:
         value: "false"
       - key: SERVER_PORT
         value: "10000"
+      - key: DB_SSL_MODE
+        value: "require"
 
   # ── UAT service (User Acceptance Testing) ─────────────────────────
   # Neon branch: uat
@@ -61,6 +63,8 @@ services:
         value: "false"
       - key: SERVER_PORT
         value: "10000"
+      - key: DB_SSL_MODE
+        value: "require"
 
   # ── PRODUCTION service ─────────────────────────────────────────────
   # Neon branch: production
@@ -86,3 +90,5 @@ services:
         value: "false"
       - key: SERVER_PORT
         value: "10000"
+      - key: DB_SSL_MODE
+        value: "require"
