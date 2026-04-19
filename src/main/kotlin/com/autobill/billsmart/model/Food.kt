@@ -2,8 +2,6 @@ package com.autobill.billsmart.model
 
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotBlank
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
 import java.time.LocalDateTime
 
 @Entity
@@ -51,17 +49,26 @@ class Food {
     @Column(name = "is_spicy")
     var isSpicy: Boolean = false
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    var createdAt: LocalDateTime? = null
+    @Column(name = "created_at", nullable = false, updatable = false)
+    var createdAt: LocalDateTime = LocalDateTime.now()
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    var updatedAt: LocalDateTime? = null
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 
     @Column(name = "is_deleted", nullable = false)
     var isDeleted: Boolean = false
 
     @Column(name = "deleted_at")
     var deletedAt: LocalDateTime? = null
+
+    @PrePersist
+    fun onCreate() {
+        createdAt = LocalDateTime.now()
+        updatedAt = LocalDateTime.now()
+    }
+
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
 }

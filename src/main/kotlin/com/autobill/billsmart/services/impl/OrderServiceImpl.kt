@@ -75,10 +75,9 @@ class OrderServiceImpl(
 
         // Add items
         request.items.forEach { itemRequest ->
-            val food = foodRepository.findById(itemRequest.foodId)
-                .orElseThrow {
-                    logger.error("Food not found: {}", itemRequest.foodId)
-                    AppException.ResourceNotFoundException("Food not found: ${itemRequest.foodId}")
+            val food = foodRepository.findByIdAndIsDeletedFalse(itemRequest.foodId)
+                ?: throw AppException.ResourceNotFoundException("Food not found: ${itemRequest.foodId}").also {
+                    logger.error("Food not found or deleted: {}", itemRequest.foodId)
                 }
 
             val orderItem = createOrderItemFromRequest(itemRequest, food, order)
@@ -114,10 +113,9 @@ class OrderServiceImpl(
             )
         }
 
-        val food = foodRepository.findById(request.foodId)
-            .orElseThrow {
-                logger.error("Food not found: {}", request.foodId)
-                AppException.ResourceNotFoundException("Food not found: ${request.foodId}")
+        val food = foodRepository.findByIdAndIsDeletedFalse(request.foodId)
+            ?: throw AppException.ResourceNotFoundException("Food not found: ${request.foodId}").also {
+                logger.error("Food not found or deleted: {}", request.foodId)
             }
 
         // Convert AddOrderItemRequest to OrderItemRequest
