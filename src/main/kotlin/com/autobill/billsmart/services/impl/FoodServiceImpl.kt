@@ -7,6 +7,7 @@ import com.autobill.billsmart.mappers.FoodMapper
 import com.autobill.billsmart.repositories.FoodRepository
 import com.autobill.billsmart.repositories.RestaurantRepository
 import com.autobill.billsmart.services.FoodService
+import java.time.LocalDateTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -33,13 +34,13 @@ class FoodServiceImpl(
         restaurantRepository.findById(restroId).orElse(null)
             ?: throw AppException.ResourceNotFoundException("Restaurant not found: $restroId")
 
-        val foods = foodRepository.findByRestaurantRestroId(restroId)
+        val foods = foodRepository.findByRestaurantRestroIdAndIsDeletedFalse(restroId)
         return foods.map { foodMapper.toResponse(it) }
     }
 
     @Transactional(readOnly = true)
     override fun getFood(id: Long): FoodResponse? =
-        foodRepository.findById(id).orElse(null)?.let { foodMapper.toResponse(it) }
+        foodRepository.findByIdAndIsDeletedFalse(id)?.let { foodMapper.toResponse(it) }
 
     @Transactional(readOnly = true)
     override fun searchFoods(
@@ -59,5 +60,14 @@ class FoodServiceImpl(
             isAvailable = isAvailable
         )
         return results.map { foodMapper.toResponse(it) }
+    }
+
+    @Transactional
+    override fun deleteFood(id: Long) {
+        val food = foodRepository.findByIdAndIsDeletedFalse(id)
+            ?: throw AppException.ResourceNotFoundException("Food not found with ID: $id")
+        food.isDeleted = true
+        food.deletedAt = LocalDateTime.now()
+        foodRepository.save(food)
     }
 }

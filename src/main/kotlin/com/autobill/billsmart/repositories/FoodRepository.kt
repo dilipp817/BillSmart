@@ -8,20 +8,23 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface FoodRepository : JpaRepository<Food, Long> {
-    fun findByRestaurantRestroId(restroId: Long): List<Food>
+    fun findByRestaurantRestroIdAndIsDeletedFalse(restroId: Long): List<Food>
+
+    fun findByIdAndIsDeletedFalse(id: Long): Food?
 
     /**
-     * Full-text search by name across all restaurants
+     * Full-text search by name across all restaurants — excludes soft-deleted items
      */
     @Query("""
-        SELECT f FROM Food f
-        WHERE (:query IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :query, '%')))
-          AND (:restaurantId IS NULL OR f.restaurant.restroId = :restaurantId)
-          AND (:categoryId IS NULL OR f.categoryId = :categoryId)
-          AND (:isVegetarian IS NULL OR f.isVegetarian = :isVegetarian)
-          AND (:isSpicy IS NULL OR f.isSpicy = :isSpicy)
-          AND (:isAvailable IS NULL OR f.isAvailable = :isAvailable)
-        ORDER BY f.name ASC
+        SELECT food FROM Food food
+        WHERE food.isDeleted = FALSE
+          AND (:query IS NULL OR LOWER(food.name) LIKE LOWER(CONCAT('%', :query, '%')))
+          AND (:restaurantId IS NULL OR food.restaurant.restroId = :restaurantId)
+          AND (:categoryId IS NULL OR food.categoryId = :categoryId)
+          AND (:isVegetarian IS NULL OR food.isVegetarian = :isVegetarian)
+          AND (:isSpicy IS NULL OR food.isSpicy = :isSpicy)
+          AND (:isAvailable IS NULL OR food.isAvailable = :isAvailable)
+        ORDER BY food.name ASC
     """)
     fun searchFoods(
         @Param("query") query: String?,

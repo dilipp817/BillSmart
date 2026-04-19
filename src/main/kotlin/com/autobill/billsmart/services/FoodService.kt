@@ -7,6 +7,7 @@ interface FoodService {
     fun createFood(restroId: Long, req: FoodRequest): FoodResponse
     fun getAllFoods(restroId: Long): List<FoodResponse>
     fun getFood(id: Long): FoodResponse?
+    fun deleteFood(id: Long)
 
     /**
      * Search foods with optional filters

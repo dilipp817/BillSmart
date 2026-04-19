@@ -342,4 +342,17 @@ class FoodsController(
             throw e
         }
     }
+
+    /**
+     * DELETE /api/v1/foods/:id
+     * Delete a food item by ID
+     *
+     * @param id Food ID
+     */
+    @DeleteMapping("/{id}")
+    fun deleteFood(@PathVariable id: Long): ResponseEntity<ApiResponse<Void?>> {
+        log.info("Deleting food with ID: {}", id)
+        foodService.deleteFood(id)
+        return ResponseEntity.ok(ApiResponse.success(null, "Food deleted successfully"))
+    }
 }

@@ -2,6 +2,9 @@ package com.autobill.billsmart.model
 
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotBlank
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
+import java.time.LocalDateTime
 
 @Entity
 @jakarta.persistence.Table(name = "food")
@@ -47,4 +50,18 @@ class Food {
 
     @Column(name = "is_spicy")
     var isSpicy: Boolean = false
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    var createdAt: LocalDateTime? = null
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    var updatedAt: LocalDateTime? = null
+
+    @Column(name = "is_deleted", nullable = false)
+    var isDeleted: Boolean = false
+
+    @Column(name = "deleted_at")
+    var deletedAt: LocalDateTime? = null
 }
