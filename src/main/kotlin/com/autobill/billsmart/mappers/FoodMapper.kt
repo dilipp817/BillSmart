@@ -14,5 +14,8 @@ interface FoodMapper {
 
     // map entity -> DTO with restaurantId extracted from restaurant.restroId
     @Mapping(source = "restaurant.restroId", target = "restaurantId")
+    @Mapping(source = "available", target = "isAvailable")
+    @Mapping(source = "vegetarian", target = "isVegetarian")
+    @Mapping(source = "spicy", target = "isSpicy")
     fun toResponse(food: Food): FoodResponse
 }
