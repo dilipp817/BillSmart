@@ -10,9 +10,10 @@ import org.mapstruct.ReportingPolicy
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 interface FoodMapper {
     @Mapping(target = "restaurant", ignore = true)
+    @Mapping(target = "isDeleted", constant = "false")
+    @Mapping(target = "deletedAt", ignore = true)
     fun toFood(req: FoodRequest): Food
 
-    // map entity -> DTO with restaurantId extracted from restaurant.restroId
     @Mapping(source = "restaurant.restroId", target = "restaurantId")
     @Mapping(source = "available", target = "isAvailable")
     @Mapping(source = "vegetarian", target = "isVegetarian")

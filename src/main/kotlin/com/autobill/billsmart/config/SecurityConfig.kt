@@ -63,6 +63,7 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.POST, "/api/v1/foods/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/api/v1/foods/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/v1/foods/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.DELETE, "/api/v1/foods/**").hasRole("ADMIN")
 
                     // ── Table mutations — MANAGER or ADMIN ──────────────────────────────────
                     // Staff reads tables; managers/admins create, rename, or remove them.

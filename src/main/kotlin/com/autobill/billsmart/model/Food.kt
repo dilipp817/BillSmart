@@ -2,6 +2,7 @@ package com.autobill.billsmart.model
 
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotBlank
+import java.time.LocalDateTime
 
 @Entity
 @jakarta.persistence.Table(name = "food")
@@ -47,4 +48,27 @@ class Food {
 
     @Column(name = "is_spicy")
     var isSpicy: Boolean = false
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    var createdAt: LocalDateTime = LocalDateTime.now()
+
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: LocalDateTime = LocalDateTime.now()
+
+    @Column(name = "is_deleted", nullable = false)
+    var isDeleted: Boolean = false
+
+    @Column(name = "deleted_at")
+    var deletedAt: LocalDateTime? = null
+
+    @PrePersist
+    fun onCreate() {
+        createdAt = LocalDateTime.now()
+        updatedAt = LocalDateTime.now()
+    }
+
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
 }
