@@ -12,7 +12,8 @@ import java.time.LocalDateTime
  * CreateOrderRequest - Request to create a new order
  */
 data class CreateOrderRequest(
-    /** Nullable — null for TAKEAWAY orders (no table). Required and must be positive for DINE_IN. */
+    /** Nullable — null for TAKEAWAY orders (no table). When provided, must be positive. DINE_IN requiredness is enforced in the service layer. */
+    @field:Positive(message = "Table ID must be positive")
     val tableId: Long? = null,
 
     @field:NotEmpty(message = "Order must have at least one item")

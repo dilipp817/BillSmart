@@ -11,7 +11,9 @@ import java.time.LocalDateTime
  *
  * Business Rules:
  * - Each order belongs to exactly one restaurant
- * - Each order is associated with one table
+ * - Table association is OPTIONAL — depends on order type:
+ *     - DINE_IN:  table is required; set to OCCUPIED on creation, released on cancel/completion
+ *     - TAKEAWAY: table is null; no table validation or status change is performed
  * - Order contains multiple order items (1:N relationship)
  * - Order can have one bill (1:1 relationship)
  * - Order total is calculated from items

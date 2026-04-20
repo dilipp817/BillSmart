@@ -453,7 +453,7 @@ class OrdersController(
             val allOrders = orderService.getOrdersByRestaurant(restaurantId)
             val matched = allOrders.filter { order ->
                 order.orderNumber.contains(q, ignoreCase = true) ||
-                order.tableNumber.contains(q, ignoreCase = true) ||
+                order.tableNumber?.contains(q, ignoreCase = true) == true ||
                 order.status.name.contains(q, ignoreCase = true)
             }
             ResponseEntity.ok(
