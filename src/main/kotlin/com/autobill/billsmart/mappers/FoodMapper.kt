@@ -10,7 +10,7 @@ import org.mapstruct.ReportingPolicy
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 interface FoodMapper {
     @Mapping(target = "restaurant", ignore = true)
-    @Mapping(target = "isDeleted", constant = "false")
+    @Mapping(target = "deleted", constant = "false")   // MapStruct strips 'is' prefix from Boolean — property is 'deleted' not 'isDeleted'
     @Mapping(target = "deletedAt", ignore = true)
     fun toFood(req: FoodRequest): Food
 
