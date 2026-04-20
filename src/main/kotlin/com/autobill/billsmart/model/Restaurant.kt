@@ -56,6 +56,21 @@ class Restaurant {
     @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now()
 
+    /**
+     * When false: counter-service / fast-food mode — no table selection, all orders go straight to Place Order.
+     * When true (default): staff selects a table for dine-in orders.
+     */
+    @Column(name = "is_table_management_enabled", nullable = false)
+    var isTableManagementEnabled: Boolean = true
+
+    /**
+     * Only relevant when isTableManagementEnabled=true AND order_type=DINE_IN.
+     * When true: payment collected upfront at counter before seating.
+     * When false (default): payment collected post-meal via Billing screen.
+     */
+    @Column(name = "is_pay_before_seat_enabled", nullable = false)
+    var isPayBeforeSeatEnabled: Boolean = false
+
     @PrePersist
     fun onCreate() {
         createdAt = LocalDateTime.now()

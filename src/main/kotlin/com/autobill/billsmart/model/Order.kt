@@ -38,8 +38,8 @@ class Order {
     @JoinColumn(name = "restaurant_id", nullable = false)
     var restaurant: Restaurant? = null
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "table_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "table_id", nullable = true)
     var table: Table? = null
 
     @Enumerated(EnumType.STRING)

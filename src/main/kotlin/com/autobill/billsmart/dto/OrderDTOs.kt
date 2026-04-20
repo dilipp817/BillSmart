@@ -12,9 +12,8 @@ import java.time.LocalDateTime
  * CreateOrderRequest - Request to create a new order
  */
 data class CreateOrderRequest(
-    @field:NotNull(message = "Table ID is required")
-    @field:Positive(message = "Table ID must be positive")
-    val tableId: Long,
+    /** Nullable — null for TAKEAWAY orders (no table). Required and must be positive for DINE_IN. */
+    val tableId: Long? = null,
 
     @field:NotEmpty(message = "Order must have at least one item")
     @field:Valid
@@ -66,8 +65,8 @@ data class OrderStatusUpdateRequest(
 data class OrderResponse(
     val id: Long,
     val restaurantId: Long,
-    val tableId: Long,
-    val tableNumber: String,
+    val tableId: Long?,
+    val tableNumber: String?,
     val orderNumber: String,
     val status: OrderStatus,
     val orderType: String,
@@ -111,7 +110,7 @@ data class OrderListResponse(
 data class OrderSummaryResponse(
     val id: Long,
     val orderNumber: String,
-    val tableNumber: String,
+    val tableNumber: String?,
     val status: OrderStatus,
     val itemCount: Int,
     val totalAmount: BigDecimal,
