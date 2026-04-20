@@ -51,16 +51,22 @@ class OrderServiceImpl(
                 AppException.ResourceNotFoundException("Restaurant not found: $restaurantId")
             }
 
-        // Validate table exists and is available
-        val table = tableRepository.findById(request.tableId)
-            .orElseThrow {
-                logger.error("Table not found: {}", request.tableId)
-                AppException.ResourceNotFoundException("Table not found: ${request.tableId}")
+        // Validate table only when tableId is provided (DINE_IN). Null = TAKEAWAY — skip entirely.
+        val table = request.tableId?.let { tableId ->
+            val t = tableRepository.findById(tableId)
+                .orElseThrow {
+                    logger.error("Table not found: {}", tableId)
+                    AppException.ResourceNotFoundException("Table not found: $tableId")
+                }
+            if (t.restaurant?.restroId != restaurantId) {
+                logger.warn("Table {} does not belong to restaurant {}", tableId, restaurantId)
+                throw AppException.ValidationException("Table does not belong to this restaurant")
             }
-
-        if (!table.canAcceptOrder()) {
-            logger.warn("Table {} cannot accept order - status: {}", request.tableId, table.status)
-            throw AppException.ValidationException("Table is not available for new orders")
+            if (!t.canAcceptOrder()) {
+                logger.warn("Table {} cannot accept order - status: {}", tableId, t.status)
+                throw AppException.ValidationException("Table is not available for new orders")
+            }
+            t
         }
 
         // Create order
@@ -87,11 +93,11 @@ class OrderServiceImpl(
         // Calculate total
         order.recalculateTotal()
 
-        // Mark table as occupied
-        table.occupyWithOrder(order)
+        // Mark table as OCCUPIED only for DINE_IN orders with a table
+        table?.occupyWithOrder(order)
 
         val saved = orderRepository.save(order)
-        tableRepository.save(table)
+        table?.let { tableRepository.save(it) }
 
         logger.info("Order created successfully: ID={}, orderNumber={}", saved.id, saved.orderNumber)
         return orderMapper.toResponse(saved)
