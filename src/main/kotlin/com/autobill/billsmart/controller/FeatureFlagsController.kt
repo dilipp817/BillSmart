@@ -4,6 +4,7 @@ import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.FeatureFlagsResponse
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.repositories.RestaurantRepository
+import com.autobill.billsmart.security.TenantUtils
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -37,6 +38,7 @@ class FeatureFlagsController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<FeatureFlagsResponse>> {
         logger.debug("Fetching feature flags for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         val restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow {

@@ -65,6 +65,14 @@ class BillServiceImpl(
                 AppException.ResourceNotFoundException("Order not found: ${request.orderId}")
             }
 
+        // Validate order belongs to the same restaurant — prevents cross-tenant bill creation
+        val orderRestaurantId = order.restaurant?.restroId
+        if (orderRestaurantId != request.restaurantId) {
+            logger.warn("Cross-tenant bill attempt: orderId={} belongs to restaurant={}, requested restaurantId={}",
+                request.orderId, orderRestaurantId, request.restaurantId)
+            throw AppException.ValidationException("Order ${request.orderId} does not belong to restaurant ${request.restaurantId}")
+        }
+
         // Validate restaurant exists
         val restaurant = restaurantRepository.findById(request.restaurantId)
             .orElseThrow {
@@ -135,6 +143,30 @@ class BillServiceImpl(
     }
 
     @Transactional(readOnly = true)
+    override fun getBillsByRestaurantAndStatus(restaurantId: Long, status: String?, pageable: Pageable): Page<BillListResponse> {
+        logger.debug("Fetching bills for restaurant: {} with status: {}", restaurantId, status)
+
+        if (!restaurantRepository.existsById(restaurantId)) {
+            throw AppException.ResourceNotFoundException("Restaurant not found: $restaurantId")
+        }
+
+        return if (status != null) {
+            if (!isValidBillStatus(status)) throw AppException.ValidationException("Invalid bill status: $status")
+            billRepository.findByRestaurantIdAndStatusOrderByCreatedAtDesc(restaurantId, status, pageable)
+                .map { billMapper.toListResponse(it) }
+        } else {
+            billRepository.findByRestaurantIdOrderByCreatedAtDesc(restaurantId, pageable)
+                .map { billMapper.toListResponse(it) }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    override fun getAllBills(pageable: Pageable): Page<BillListResponse> {
+        logger.debug("Fetching all bills (super_admin)")
+        return billRepository.findAll(pageable)
+            .map { billMapper.toListResponse(it) }
+    }
+
     override fun getBillsByStatus(status: String, pageable: Pageable): Page<BillListResponse> {
         logger.debug("Fetching bills by status: {}", status)
 

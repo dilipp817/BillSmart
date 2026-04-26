@@ -30,7 +30,9 @@ data class CategoryResponse(
     val imageUrl: String? = null,
     val displayOrder: Int = 0,
     val isActive: Boolean = true,
-    val foodCount: Int = 0
+    val foodCount: Int = 0,
+    /** Restaurant this category belongs to. Used for tenant ownership verification. */
+    val restaurantId: Long? = null
 )
 
 /**

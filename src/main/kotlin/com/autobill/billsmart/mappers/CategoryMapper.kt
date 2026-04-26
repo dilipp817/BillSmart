@@ -15,7 +15,8 @@ class CategoryMapper {
             imageUrl = category.imageUrl,
             displayOrder = category.displayOrder,
             isActive = category.isActive,
-            foodCount = 0 // Will be calculated from Food table if needed
+            foodCount = 0, // Will be calculated from Food table if needed
+            restaurantId = category.restaurant?.restroId
         )
     }
 }

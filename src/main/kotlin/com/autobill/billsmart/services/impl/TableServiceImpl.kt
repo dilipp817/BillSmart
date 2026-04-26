@@ -230,6 +230,7 @@ class TableServiceImpl(
             // Update fields
             table.tableNumber = request.tableNumber
             table.capacity = request.capacity
+            table.floor = request.floor
             if (request.status != null && table.status != request.status) {
                 table.updateStatus(request.status)
             }

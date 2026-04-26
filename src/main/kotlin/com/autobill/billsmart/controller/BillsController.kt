@@ -1,6 +1,7 @@
 package com.autobill.billsmart.controller
 
 import com.autobill.billsmart.dto.*
+import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.BillService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -38,24 +39,28 @@ class BillsController(
     @PostMapping
     fun createBill(@Valid @RequestBody request: BillRequest): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Creating bill for order: {}", request.orderId)
+        // Verify the restaurantId in the request body belongs to the caller
+        TenantUtils.assertTenantAccess(request.restaurantId)
         val response = billService.createBill(request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(response, "Bill created successfully"))
     }
 
-    /**
-     * GET /api/v1/bills - Get all bills (paginated)
-     */
+    /** GET /api/v1/bills - Get all bills (paginated) — scoped to the caller's restaurant */
     @GetMapping
     fun getAllBills(
         @RequestParam(required = false) status: String?,
         @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable
     ): ResponseEntity<ApiResponse<List<BillListResponse>>> {
         logger.debug("Fetching bills - status: {}, page: {}", status, pageable.pageNumber)
-        val page = if (status != null) {
-            billService.getBillsByStatus(status, pageable)
-        } else {
-            org.springframework.data.domain.Page.empty(pageable)
+
+        // Scope results to the caller's restaurant; super_admin (null jwtRestaurantId) sees all
+        val jwtRestaurantId = TenantUtils.getJwtRestaurantId()
+
+        val page = when {
+            jwtRestaurantId != null -> billService.getBillsByRestaurantAndStatus(jwtRestaurantId, status, pageable)
+            status != null          -> billService.getBillsByStatus(status, pageable)
+            else                    -> billService.getAllBills(pageable)
         }
         return ResponseEntity.ok(ApiResponse.success(page.content, "Bills retrieved successfully"))
     }
@@ -69,6 +74,8 @@ class BillsController(
         val response = billService.getBillById(id)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        // Tenant ownership check
+        TenantUtils.assertResourceOwnership(response.restaurantId)
         return ResponseEntity.ok(ApiResponse.success(response, "Bill retrieved successfully"))
     }
 
@@ -81,14 +88,10 @@ class BillsController(
         val response = billService.getBillByNumber(billNumber)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found: $billNumber"))
+        // Tenant ownership check
+        TenantUtils.assertResourceOwnership(response.restaurantId)
         return ResponseEntity.ok(ApiResponse.success(response, "Bill retrieved successfully"))
     }
-
-    /**
-     * PUT /api/v1/bills/{id} - Removed.
-     * Bills are generated from orders and must not be mutated directly.
-     * Use PATCH /bills/{id}/cancel to void a bill.
-     */
 
     /**
      * PATCH /api/v1/bills/{id}/paid - Mark bill as paid
@@ -96,6 +99,11 @@ class BillsController(
     @PatchMapping("/{id}/paid")
     fun markBillAsPaid(@PathVariable id: Long): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Marking bill as paid: {}", id)
+        // Ownership check before mutation
+        val existing = billService.getBillById(id)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
         val response = billService.markBillAsPaid(id)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
@@ -108,6 +116,11 @@ class BillsController(
     @PatchMapping("/{id}/cancel")
     fun cancelBill(@PathVariable id: Long): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Cancelling bill: {}", id)
+        // Ownership check before mutation
+        val existing = billService.getBillById(id)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
         val response = billService.cancelBill(id)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
@@ -123,6 +136,11 @@ class BillsController(
         @Valid @RequestBody items: List<BillItemRequest>
     ): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Adding {} items to bill: {}", items.size, id)
+        // Ownership check before mutation
+        val existing = billService.getBillById(id)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
         val response = billService.addBillItems(id, items)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
@@ -139,17 +157,16 @@ class BillsController(
         @PathVariable itemId: Long
     ): ResponseEntity<ApiResponse<BillResponse>> {
         logger.info("Removing item {} from bill: {}", itemId, id)
+        // Ownership check before mutation
+        val existing = billService.getBillById(id)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
         val response = billService.removeBillItem(id, itemId)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Bill not found with ID: $id"))
         return ResponseEntity.ok(ApiResponse.success(response, "Item removed from bill successfully"))
     }
-
-    /**
-     * DELETE /api/v1/bills/{id} - Removed.
-     * Hard-deleting bills is a financial audit risk. Use PATCH /bills/{id}/cancel instead.
-     */
 }
-
 
 
