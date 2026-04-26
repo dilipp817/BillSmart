@@ -132,8 +132,8 @@ class PaymentController(
                     ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse(success = false, message = "Bill not found: ${request.billId}"))
                 if (bill.restaurantId != order.restaurantId) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(ApiResponse(success = false, message = "Bill does not belong to the specified order's restaurant"))
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse(success = false, message = "Bill not found: ${request.billId}"))
                 }
                 if (bill.orderId != request.orderId) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
