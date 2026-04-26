@@ -2,6 +2,7 @@ package com.autobill.billsmart.controller
 
 import com.autobill.billsmart.dto.*
 import com.autobill.billsmart.exception.AppException
+import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.FoodService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
@@ -59,6 +60,8 @@ class FoodsController(
 
             // Get all foods and apply filters in memory
             val allFoods = if (restaurantId != null && restaurantId > 0) {
+                // Tenant guard: the requested restaurant_id must match the caller's JWT restaurantId
+                TenantUtils.assertTenantAccess(restaurantId)
                 foodService.getAllFoods(restaurantId)
             } else {
                 emptyList()
@@ -185,12 +188,12 @@ class FoodsController(
 
             if (effectiveRestaurantId == null) {
                 return ResponseEntity.badRequest().body(
-                    ApiResponse.error(
-                        code = "VALIDATION_ERROR",
-                        message = "restaurant_id is required"
-                    )
+                    ApiResponse.error(code = "VALIDATION_ERROR", message = "restaurant_id is required")
                 )
             }
+
+            // Tenant guard: if caller explicitly passed a restaurant_id, ensure it matches their JWT
+            TenantUtils.assertTenantAccess(effectiveRestaurantId)
 
             val results = foodService.searchFoods(
                 query = q,
@@ -256,7 +259,9 @@ class FoodsController(
         val food = foodService.getFood(id)
             ?: throw AppException.ResourceNotFoundException("Food not found with ID: $id")
 
-        // FoodResponse already contains restaurantId mapped from food.restaurant.restroId by FoodMapper
+        // Tenant ownership: only the owning restaurant (or super_admin) may read this food
+        TenantUtils.assertResourceOwnership(food.restaurantId)
+
         return ResponseEntity.ok(ApiResponse.success(food, "Food retrieved successfully"))
     }
 
@@ -275,6 +280,7 @@ class FoodsController(
         @RequestParam(defaultValue = "20") limit: Int
     ): ResponseEntity<ApiResponse<PaginatedResponse<FoodListItem>>> {
         log.info("Getting foods for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val foods = foodService.getAllFoods(restaurantId)
@@ -305,12 +311,7 @@ class FoodsController(
                 hasPrevious = page > 0
             )
 
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    PaginatedResponse(paginatedData, paginationMeta),
-                    "Foods retrieved successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(PaginatedResponse(paginatedData, paginationMeta), "Foods retrieved successfully"))
         } catch (e: Exception) {
             log.error("Error retrieving foods for restaurant: {}", restaurantId, e)
             throw e
@@ -330,13 +331,11 @@ class FoodsController(
         @Valid @RequestBody request: FoodRequest
     ): ResponseEntity<ApiResponse<FoodResponse>> {
         log.info("Creating food for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val response = foodService.createFood(restaurantId, request)
-            ResponseEntity(
-                ApiResponse.success(response, "Food created successfully"),
-                HttpStatus.CREATED
-            )
+            ResponseEntity(ApiResponse.success(response, "Food created successfully"), HttpStatus.CREATED)
         } catch (e: Exception) {
             log.error("Error creating food", e)
             throw e
@@ -352,6 +351,12 @@ class FoodsController(
     @DeleteMapping("/{id}")
     fun deleteFood(@PathVariable id: Long): ResponseEntity<ApiResponse<Void?>> {
         log.info("Deleting food with ID: {}", id)
+
+        // Ownership check: fetch the food first, verify it belongs to the caller's restaurant
+        val food = foodService.getFood(id)
+            ?: throw AppException.ResourceNotFoundException("Food not found with ID: $id")
+        TenantUtils.assertResourceOwnership(food.restaurantId)
+
         foodService.deleteFood(id)
         return ResponseEntity.ok(ApiResponse.success(null, "Food deleted successfully"))
     }

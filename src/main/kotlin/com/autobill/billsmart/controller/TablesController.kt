@@ -7,6 +7,7 @@ import com.autobill.billsmart.dto.TableResponse
 import com.autobill.billsmart.dto.TablesListResponse
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.model.enums.TableStatus
+import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.TableService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -59,16 +60,12 @@ class TablesController(
         @Valid @RequestBody request: TableRequest
     ): ResponseEntity<ApiResponse<TableResponse>> {
         logger.info("POST: Create table for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val response = tableService.createTable(restaurantId, request)
             ResponseEntity.status(HttpStatus.CREATED)
-                .body(
-                    ApiResponse.success(
-                        data = response,
-                        message = "Table created successfully"
-                    )
-                )
+                .body(ApiResponse.success(data = response, message = "Table created successfully"))
         } catch (e: AppException) {
             logger.error("Error creating table: {}", e.message)
             handleAppException(e)
@@ -90,18 +87,11 @@ class TablesController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<TablesListResponse>> {
         logger.info("GET: Fetch tables for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val tables = tableService.getTablesByRestaurant(restaurantId)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = TablesListResponse(
-                        tables = tables,
-                        total = tables.size.toLong()
-                    ),
-                    message = "Tables retrieved successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(data = TablesListResponse(tables = tables, total = tables.size.toLong()), message = "Tables retrieved successfully"))
         } catch (e: AppException) {
             logger.error("Error fetching tables: {}", e.message)
             handleAppException(e)
@@ -123,22 +113,17 @@ class TablesController(
         @PathVariable id: Long
     ): ResponseEntity<ApiResponse<TableResponse>> {
         logger.info("GET: Fetch table - ID: {}", id)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         val table = tableService.getTable(id)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(
-                    ApiResponse.error(
-                        code = "NOT_FOUND",
-                        message = "Table not found"
-                    )
-                )
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
 
-        return ResponseEntity.ok(
-            ApiResponse.success(
-                data = table,
-                message = "Table retrieved successfully"
-            )
-        )
+        // Ownership: table must belong to the restaurant in the URL
+        if (table.restaurantId != restaurantId) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(data = table, message = "Table retrieved successfully"))
     }
 
     /**
@@ -156,15 +141,11 @@ class TablesController(
         @RequestParam(required = false) capacity: Int?
     ): ResponseEntity<ApiResponse<List<TableAvailabilityResponse>>> {
         logger.info("GET: Fetch available tables - restaurant: {}, capacity: {}", restaurantId, capacity)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val tables = tableService.getAvailableTables(restaurantId, capacity)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = tables,
-                    message = "Available tables retrieved successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(data = tables, message = "Available tables retrieved successfully"))
         } catch (e: AppException) {
             logger.error("Error fetching available tables: {}", e.message)
             handleAppException(e)
@@ -184,15 +165,11 @@ class TablesController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<List<TableResponse>>> {
         logger.info("GET: Fetch occupied tables - restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val tables = tableService.getOccupiedTables(restaurantId)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = tables,
-                    message = "Occupied tables retrieved successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(data = tables, message = "Occupied tables retrieved successfully"))
         } catch (e: AppException) {
             logger.error("Error fetching occupied tables: {}", e.message)
             handleAppException(e)
@@ -214,15 +191,11 @@ class TablesController(
         @PathVariable status: TableStatus
     ): ResponseEntity<ApiResponse<List<TableResponse>>> {
         logger.info("GET: Fetch tables by status - status: {}", status)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val tables = tableService.getTablesByStatus(restaurantId, status)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = tables,
-                    message = "Tables retrieved successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(data = tables, message = "Tables retrieved successfully"))
         } catch (e: AppException) {
             logger.error("Error fetching tables by status: {}", e.message)
             handleAppException(e)
@@ -242,15 +215,11 @@ class TablesController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<Long>> {
         logger.info("GET: Count available tables - restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val count = tableService.countAvailableTables(restaurantId)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = count,
-                    message = "Available tables count retrieved successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(data = count, message = "Available tables count retrieved successfully"))
         } catch (e: AppException) {
             logger.error("Error counting available tables: {}", e.message)
             handleAppException(e)
@@ -276,23 +245,19 @@ class TablesController(
         @Valid @RequestBody request: TableRequest
     ): ResponseEntity<ApiResponse<TableResponse>> {
         logger.info("PUT: Update table - ID: {}", id)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
-            val response = tableService.updateTable(id, request)
-                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(
-                        ApiResponse.error(
-                            code = "NOT_FOUND",
-                            message = "Table not found"
-                        )
-                    )
+            // Ownership check: verify table belongs to this restaurant before updating
+            val existing = tableService.getTable(id)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            if (existing.restaurantId != restaurantId) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            }
 
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = response,
-                    message = "Table updated successfully"
-                )
-            )
+            val response = tableService.updateTable(id, request)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            ResponseEntity.ok(ApiResponse.success(data = response, message = "Table updated successfully"))
         } catch (e: AppException) {
             logger.error("Error updating table: {}", e.message)
             handleAppException(e)
@@ -316,15 +281,18 @@ class TablesController(
         @RequestParam(name = "new_status") newStatus: TableStatus
     ): ResponseEntity<ApiResponse<TableResponse>> {
         logger.info("PATCH: Update table status - ID: {}, newStatus: {}", id, newStatus)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
+            // Ownership check
+            val existing = tableService.getTable(id)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            if (existing.restaurantId != restaurantId) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            }
+
             val response = tableService.updateTableStatus(id, newStatus)
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = response,
-                    message = "Table status updated successfully"
-                )
-            )
+            ResponseEntity.ok(ApiResponse.success(data = response, message = "Table status updated successfully"))
         } catch (e: AppException) {
             logger.error("Error updating table status: {}", e.message)
             handleAppException(e)
@@ -348,25 +316,21 @@ class TablesController(
         @PathVariable id: Long
     ): ResponseEntity<ApiResponse<String>> {
         logger.info("DELETE: Delete table - ID: {}", id)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
-            val deleted = tableService.deleteTable(id)
-            if (!deleted) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(
-                        ApiResponse.error(
-                            code = "NOT_FOUND",
-                            message = "Table not found"
-                        )
-                    )
+            // Ownership check
+            val existing = tableService.getTable(id)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            if (existing.restaurantId != restaurantId) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
             }
 
-            ResponseEntity.ok(
-                ApiResponse.success(
-                    data = "Table deleted successfully",
-                    message = "Table removed"
-                )
-            )
+            val deleted = tableService.deleteTable(id)
+            if (!deleted) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(code = "NOT_FOUND", message = "Table not found"))
+            }
+            ResponseEntity.ok(ApiResponse.success(data = "Table deleted successfully", message = "Table removed"))
         } catch (e: AppException) {
             logger.error("Error deleting table: {}", e.message)
             handleAppException(e)

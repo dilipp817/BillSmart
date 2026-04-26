@@ -61,6 +61,8 @@ data class PaymentResponse(
     val notes: String? = null,
     /** Change returned to customer. > 0 only for CASH overpayments. */
     val changeAmount: BigDecimal = BigDecimal.ZERO,
+    /** Restaurant this payment belongs to. Used for tenant ownership verification. */
+    val restaurantId: Long? = null,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null
 )

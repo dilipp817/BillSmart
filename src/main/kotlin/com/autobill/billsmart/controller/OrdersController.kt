@@ -3,6 +3,7 @@ package com.autobill.billsmart.controller
 import com.autobill.billsmart.dto.*
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.model.enums.OrderStatus
+import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.BillService
 import com.autobill.billsmart.services.OrderService
 import org.slf4j.LoggerFactory
@@ -52,6 +53,7 @@ class OrdersController(
         @Valid @RequestBody request: CreateOrderRequest
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("POST: Create order for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val response = orderService.createOrder(restaurantId, request)
@@ -82,6 +84,7 @@ class OrdersController(
         logger.info("POST: Add item to order: {}", orderId)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.addItemToOrder(orderId, request)
             ResponseEntity.status(HttpStatus.OK)
@@ -109,6 +112,7 @@ class OrdersController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<OrderListResponse>> {
         logger.info("GET: Fetch all orders for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val orders = orderService.getOrdersByRestaurant(restaurantId)
@@ -139,6 +143,7 @@ class OrdersController(
         @PathVariable @Positive orderId: Long
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         logger.info("GET: Fetch order - ID: {}", orderId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         val order = orderService.getOrder(orderId)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -169,6 +174,7 @@ class OrdersController(
         @PathVariable status: OrderStatus
     ): ResponseEntity<ApiResponse<OrderListResponse>> {
         logger.info("GET: Fetch orders by status - status: {}", status)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val orders = orderService.getOrdersByStatus(restaurantId, status)
@@ -198,6 +204,7 @@ class OrdersController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<OrderListResponse>> {
         logger.info("GET: Fetch active orders for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         val orders = orderService.getActiveOrders(restaurantId)
         return ResponseEntity.ok(
@@ -224,6 +231,7 @@ class OrdersController(
         @RequestParam(name = "end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime
     ): ResponseEntity<ApiResponse<OrderListResponse>> {
         logger.info("GET: Fetch orders by date range - start: {}, end: {}", startDate, endDate)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val orders = orderService.getOrdersByDateRange(restaurantId, startDate, endDate)
@@ -253,6 +261,7 @@ class OrdersController(
         @PathVariable restaurantId: Long
     ): ResponseEntity<ApiResponse<Map<String, Long>>> {
         logger.info("GET: Count pending orders for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         val count = orderService.countPendingOrders(restaurantId)
         return ResponseEntity.ok(
@@ -279,6 +288,7 @@ class OrdersController(
         logger.info("PATCH: Update order status - ID: {}, newStatus: {}", orderId, request.status)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.updateOrderStatus(orderId, request.status)
             ResponseEntity.ok(
@@ -308,6 +318,7 @@ class OrdersController(
         logger.info("PUT: Update order item - orderId: {}, itemId: {}", orderId, itemId)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.updateOrderItem(orderId, itemId, request)
             ResponseEntity.ok(
@@ -337,6 +348,7 @@ class OrdersController(
         logger.info("PATCH: Update item status - orderId: {}, itemId: {}, status: {}", orderId, itemId, newStatus)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.updateItemStatus(orderId, itemId, newStatus)
             ResponseEntity.ok(
@@ -367,6 +379,7 @@ class OrdersController(
         logger.info("DELETE: Remove item from order - orderId: {}, itemId: {}", orderId, itemId)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.removeItemFromOrder(orderId, itemId)
             ResponseEntity.ok(
@@ -395,6 +408,7 @@ class OrdersController(
         logger.info("DELETE: Cancel order - ID: {}", orderId)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val response = orderService.cancelOrder(orderId)
             ResponseEntity.ok(
@@ -427,6 +441,7 @@ class OrdersController(
         logger.info("POST: Generate bill for order: {}, discount: {}", orderId, discount)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             requireOrderBelongsToRestaurant(restaurantId, orderId)
             val bill = billService.generateBillForOrder(orderId, discount)
             ResponseEntity.status(HttpStatus.CREATED)
@@ -450,6 +465,7 @@ class OrdersController(
         logger.info("GET: Search orders - restaurant: {}, q: {}", restaurantId, q)
 
         return try {
+            TenantUtils.assertTenantAccess(restaurantId)
             val allOrders = orderService.getOrdersByRestaurant(restaurantId)
             val matched = allOrders.filter { order ->
                 order.orderNumber.contains(q, ignoreCase = true) ||

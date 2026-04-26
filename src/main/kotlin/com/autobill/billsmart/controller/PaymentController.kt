@@ -4,6 +4,9 @@ import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.PaymentRequest
 import com.autobill.billsmart.dto.PaymentResponse
 import com.autobill.billsmart.dto.PaymentStatusUpdateRequest
+import com.autobill.billsmart.security.TenantUtils
+import com.autobill.billsmart.services.BillService
+import com.autobill.billsmart.services.OrderService
 import com.autobill.billsmart.services.PaymentService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
@@ -44,7 +47,9 @@ import jakarta.validation.constraints.Min
 @RequestMapping("/api/v1/payments")
 @Validated
 class PaymentController(
-    private val paymentService: PaymentService
+    private val paymentService: PaymentService,
+    private val billService: BillService,
+    private val orderService: OrderService
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -114,22 +119,17 @@ class PaymentController(
         logger.info("Processing payment for bill: ${request.billId}, amount: ${request.amount}")
 
         return try {
+            // Ownership check BEFORE creating payment — prevent saving to DB then rejecting
+            val order = orderService.getOrder(request.orderId)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse(success = false, message = "Order not found: ${request.orderId}"))
+            TenantUtils.assertResourceOwnership(order.restaurantId)
+
             val response = paymentService.createPayment(request)
-            ResponseEntity.ok(
-                ApiResponse(
-                    success = true,
-                    message = "Payment processed successfully",
-                    data = response
-                )
-            )
+            ResponseEntity.ok(ApiResponse(success = true, message = "Payment processed successfully", data = response))
         } catch (e: Exception) {
             logger.error("Error processing payment", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Payment processing failed"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Payment processing failed"))
         }
     }
 
@@ -178,28 +178,14 @@ class PaymentController(
         return try {
             val payment = paymentService.getPaymentById(id)
             if (payment != null) {
-                ResponseEntity.ok(
-                    ApiResponse(
-                        success = true,
-                        data = payment
-                    )
-                )
+                TenantUtils.assertResourceOwnership(payment.restaurantId)
+                ResponseEntity.ok(ApiResponse(success = true, data = payment))
             } else {
-                ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    ApiResponse(
-                        success = false,
-                        message = "Payment not found"
-                    )
-                )
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse(success = false, message = "Payment not found"))
             }
         } catch (e: Exception) {
             logger.error("Error fetching payment", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Error fetching payment"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error fetching payment"))
         }
     }
 
@@ -255,29 +241,17 @@ class PaymentController(
         return try {
             val pageable: Pageable = PageRequest.of(offset / limit, limit)
             val payments = paymentService.getPaymentsByBill(billId, pageable)
+            // Ownership: verify the bill belongs to the caller's restaurant
+            val bill = billService.getBillById(billId)
+            TenantUtils.assertResourceOwnership(bill?.restaurantId)
 
-            ResponseEntity.ok(
-                ApiResponse(
-                    success = true,
-                    data = mapOf(
-                        "payments" to payments.content,
-                        "meta" to mapOf(
-                            "total" to payments.totalElements,
-                            "limit" to limit,
-                            "offset" to offset,
-                            "has_more" to !payments.isLast
-                        )
-                    )
-                )
-            )
+            ResponseEntity.ok(ApiResponse(success = true, data = mapOf(
+                "payments" to payments.content,
+                "meta" to mapOf("total" to payments.totalElements, "limit" to limit, "offset" to offset, "has_more" to !payments.isLast)
+            )))
         } catch (e: Exception) {
             logger.error("Error fetching payments for bill", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Error fetching payments"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error fetching payments"))
         }
     }
 
@@ -304,29 +278,17 @@ class PaymentController(
         return try {
             val pageable: Pageable = PageRequest.of(offset / limit, limit)
             val payments = paymentService.getPaymentsByOrder(orderId, pageable)
+            // Ownership: verify the order belongs to the caller's restaurant
+            val order = orderService.getOrder(orderId)
+            TenantUtils.assertResourceOwnership(order?.restaurantId)
 
-            ResponseEntity.ok(
-                ApiResponse(
-                    success = true,
-                    data = mapOf(
-                        "payments" to payments.content,
-                        "meta" to mapOf(
-                            "total" to payments.totalElements,
-                            "limit" to limit,
-                            "offset" to offset,
-                            "has_more" to !payments.isLast
-                        )
-                    )
-                )
-            )
+            ResponseEntity.ok(ApiResponse(success = true, data = mapOf(
+                "payments" to payments.content,
+                "meta" to mapOf("total" to payments.totalElements, "limit" to limit, "offset" to offset, "has_more" to !payments.isLast)
+            )))
         } catch (e: Exception) {
             logger.error("Error fetching payments for order", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Error fetching payments"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error fetching payments"))
         }
     }
 
@@ -356,22 +318,16 @@ class PaymentController(
         logger.info("Updating payment status: id=$id, newStatus=${request.status}")
 
         return try {
+            // Ownership check before mutation
+            val existing = paymentService.getPaymentById(id)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse(success = false, message = "Payment not found"))
+            TenantUtils.assertResourceOwnership(existing.restaurantId)
+
             val payment = paymentService.updatePaymentStatus(id, request)
-            ResponseEntity.ok(
-                ApiResponse(
-                    success = true,
-                    message = "Payment status updated to ${request.status}",
-                    data = payment
-                )
-            )
+            ResponseEntity.ok(ApiResponse(success = true, message = "Payment status updated to ${request.status}", data = payment))
         } catch (e: Exception) {
             logger.error("Error updating payment status", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Error updating payment status"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error updating payment status"))
         }
     }
 
@@ -395,22 +351,16 @@ class PaymentController(
         logger.info("Processing payment: $id")
 
         return try {
+            // Ownership check before mutation
+            val existing = paymentService.getPaymentById(id)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse(success = false, message = "Payment not found"))
+            TenantUtils.assertResourceOwnership(existing.restaurantId)
+
             val payment = paymentService.processPayment(id)
-            ResponseEntity.ok(
-                ApiResponse(
-                    success = true,
-                    message = "Payment processed successfully",
-                    data = payment
-                )
-            )
+            ResponseEntity.ok(ApiResponse(success = true, message = "Payment processed successfully", data = payment))
         } catch (e: Exception) {
             logger.error("Error processing payment", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Error processing payment"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error processing payment"))
         }
     }
 
@@ -433,22 +383,16 @@ class PaymentController(
         logger.info("Refunding payment: $id")
 
         return try {
+            // Ownership check before mutation
+            val existing = paymentService.getPaymentById(id)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse(success = false, message = "Payment not found"))
+            TenantUtils.assertResourceOwnership(existing.restaurantId)
+
             val payment = paymentService.refundPayment(id)
-            ResponseEntity.ok(
-                ApiResponse(
-                    success = true,
-                    message = "Payment refunded successfully",
-                    data = payment
-                )
-            )
+            ResponseEntity.ok(ApiResponse(success = true, message = "Payment refunded successfully", data = payment))
         } catch (e: Exception) {
             logger.error("Error refunding payment", e)
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ApiResponse(
-                    success = false,
-                    message = e.message ?: "Error refunding payment"
-                )
-            )
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error refunding payment"))
         }
     }
 }

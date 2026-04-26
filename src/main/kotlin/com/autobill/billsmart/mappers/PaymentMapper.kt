@@ -20,6 +20,7 @@ interface PaymentMapper {
      */
     @Mapping(target = "billId", source = "bill.id")
     @Mapping(target = "orderId", source = "order.id")
+    @Mapping(target = "restaurantId", source = "order.restaurant.restroId")
     fun toResponse(payment: Payment): PaymentResponse
 
     /**

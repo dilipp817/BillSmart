@@ -3,6 +3,7 @@ package com.autobill.billsmart.controller
 import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.RestaurantRequest
 import com.autobill.billsmart.dto.RestaurantResponse
+import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.RestaurantService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -44,6 +45,7 @@ class RestaurantController(
     @GetMapping("/{id}")
     fun getRestaurant(@PathVariable id: Long): ResponseEntity<ApiResponse<RestaurantResponse>> {
         log.info("GET restaurant id={}", id)
+        TenantUtils.assertTenantAccess(id)
         val restaurant = restaurantService.getRestaurant(id)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("RESOURCE_NOT_FOUND", "Restaurant not found with ID: $id"))
@@ -75,8 +77,8 @@ class RestaurantController(
         @Valid @RequestBody request: RestaurantRequest
     ): ResponseEntity<ApiResponse<RestaurantResponse>> {
         log.info("PATCH update restaurant id={}", id)
+        TenantUtils.assertTenantAccess(id)
         val restaurant = restaurantService.updateRestaurant(id, request)
         return ResponseEntity.ok(ApiResponse.success(restaurantService.toResponse(restaurant), "Restaurant updated successfully"))
     }
 }
-

@@ -7,6 +7,7 @@ import com.autobill.billsmart.dto.FoodListItem
 import com.autobill.billsmart.dto.PaginatedResponse
 import com.autobill.billsmart.dto.PaginationMeta
 import com.autobill.billsmart.exception.AppException
+import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.CategoryService
 import com.autobill.billsmart.services.FoodService
 import jakarta.validation.Valid
@@ -43,12 +44,11 @@ class CategoriesController(
         @RequestParam(name = "restaurant_id") restaurantId: Long
     ): ResponseEntity<ApiResponse<List<CategoryResponse>>> {
         log.info("Getting categories for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         return try {
             val categories = categoryService.getCategories(restaurantId)
-            ResponseEntity.ok(
-                ApiResponse.success(categories, "Categories retrieved successfully")
-            )
+            ResponseEntity.ok(ApiResponse.success(categories, "Categories retrieved successfully"))
         } catch (e: AppException) {
             log.error("Error retrieving categories", e)
             throw e
@@ -68,9 +68,10 @@ class CategoriesController(
         val category = categoryService.getCategory(id)
             ?: throw AppException.ResourceNotFoundException("Category not found with ID: $id")
 
-        return ResponseEntity.ok(
-            ApiResponse.success(category, "Category retrieved successfully")
-        )
+        // Tenant ownership check
+        TenantUtils.assertResourceOwnership(category.restaurantId)
+
+        return ResponseEntity.ok(ApiResponse.success(category, "Category retrieved successfully"))
     }
 
     /**
@@ -86,6 +87,7 @@ class CategoriesController(
         @Valid @RequestBody request: CategoryRequest
     ): ResponseEntity<ApiResponse<CategoryResponse>> {
         log.info("Creating category for restaurant: {}", restaurantId)
+        TenantUtils.assertTenantAccess(restaurantId)
 
         if (restaurantId <= 0) {
             throw AppException.ValidationException("Invalid restaurant ID")
@@ -93,10 +95,7 @@ class CategoriesController(
 
         return try {
             val response = categoryService.createCategory(restaurantId, request)
-            ResponseEntity(
-                ApiResponse.success(response, "Category created successfully"),
-                HttpStatus.CREATED
-            )
+            ResponseEntity(ApiResponse.success(response, "Category created successfully"), HttpStatus.CREATED)
         } catch (e: AppException) {
             log.error("Error creating category", e)
             throw e
@@ -114,12 +113,15 @@ class CategoriesController(
     ): ResponseEntity<ApiResponse<CategoryResponse>> {
         log.info("Updating category with ID: {}", id)
 
+        // Ownership check before update
+        val existing = categoryService.getCategory(id)
+            ?: throw AppException.ResourceNotFoundException("Category not found with ID: $id")
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
+
         val updated = categoryService.updateCategory(id, request)
             ?: throw AppException.ResourceNotFoundException("Category not found with ID: $id")
 
-        return ResponseEntity.ok(
-            ApiResponse.success(updated, "Category updated successfully")
-        )
+        return ResponseEntity.ok(ApiResponse.success(updated, "Category updated successfully"))
     }
 
     /**
@@ -129,6 +131,12 @@ class CategoriesController(
     @DeleteMapping("/{id}")
     fun deleteCategory(@PathVariable id: Long): ResponseEntity<ApiResponse<String>> {
         log.info("Deleting category with ID: {}", id)
+
+        // Ownership check before delete
+        val existing = categoryService.getCategory(id)
+            ?: throw AppException.ResourceNotFoundException("Category not found with ID: $id")
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
+
         val deleted = categoryService.deleteCategory(id)
         if (!deleted) throw AppException.ResourceNotFoundException("Category not found with ID: $id")
         return ResponseEntity.ok(ApiResponse.success("", "Category deleted successfully"))
@@ -150,9 +158,10 @@ class CategoriesController(
     ): ResponseEntity<ApiResponse<PaginatedResponse<FoodListItem>>> {
         log.info("Getting foods for category: {}", id)
 
-        // Verify category exists
-        categoryService.getCategory(id)
+        // Verify category exists and caller owns it
+        val category = categoryService.getCategory(id)
             ?: throw AppException.ResourceNotFoundException("Category not found with ID: $id")
+        TenantUtils.assertResourceOwnership(category.restaurantId)
 
         val foods = foodService.searchFoods(
             query = null,
@@ -187,12 +196,6 @@ class CategoriesController(
             hasPrevious = offset > 0
         )
 
-        return ResponseEntity.ok(
-            ApiResponse.success(
-                PaginatedResponse(paginatedData, paginationMeta),
-                "Foods for category retrieved successfully"
-            )
-        )
+        return ResponseEntity.ok(ApiResponse.success(PaginatedResponse(paginatedData, paginationMeta), "Foods for category retrieved successfully"))
     }
 }
-
