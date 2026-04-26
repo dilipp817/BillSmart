@@ -161,6 +161,12 @@ class BillServiceImpl(
     }
 
     @Transactional(readOnly = true)
+    override fun getAllBills(pageable: Pageable): Page<BillListResponse> {
+        logger.debug("Fetching all bills (super_admin)")
+        return billRepository.findAll(pageable)
+            .map { billMapper.toListResponse(it) }
+    }
+
     override fun getBillsByStatus(status: String, pageable: Pageable): Page<BillListResponse> {
         logger.debug("Fetching bills by status: {}", status)
 

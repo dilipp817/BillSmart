@@ -54,13 +54,13 @@ class BillsController(
     ): ResponseEntity<ApiResponse<List<BillListResponse>>> {
         logger.debug("Fetching bills - status: {}, page: {}", status, pageable.pageNumber)
 
-        // Scope results to the caller's restaurant; super_admin (null) sees all
+        // Scope results to the caller's restaurant; super_admin (null jwtRestaurantId) sees all
         val jwtRestaurantId = TenantUtils.getJwtRestaurantId()
 
         val page = when {
             jwtRestaurantId != null -> billService.getBillsByRestaurantAndStatus(jwtRestaurantId, status, pageable)
             status != null          -> billService.getBillsByStatus(status, pageable)
-            else                    -> org.springframework.data.domain.Page.empty(pageable)
+            else                    -> billService.getAllBills(pageable)
         }
         return ResponseEntity.ok(ApiResponse.success(page.content, "Bills retrieved successfully"))
     }
