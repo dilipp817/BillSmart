@@ -126,6 +126,21 @@ class PaymentController(
                     .body(ApiResponse(success = false, message = "Order not found: ${request.orderId}"))
             TenantUtils.assertResourceOwnership(order.restaurantId)
 
+            // Validate bill cross-ownership BEFORE creating payment
+            if (request.billId != null) {
+                val bill = billService.getBillById(request.billId)
+                    ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse(success = false, message = "Bill not found: ${request.billId}"))
+                if (bill.restaurantId != order.restaurantId) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse(success = false, message = "Bill does not belong to the specified order's restaurant"))
+                }
+                if (bill.orderId != request.orderId) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse(success = false, message = "Bill does not belong to order: ${request.orderId}"))
+                }
+            }
+
             val response = paymentService.createPayment(request)
             ResponseEntity.ok(ApiResponse(success = true, message = "Payment processed successfully", data = response))
         } catch (e: AppException) {

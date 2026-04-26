@@ -4,7 +4,6 @@ import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.TableAvailabilityResponse
 import com.autobill.billsmart.dto.TableRequest
 import com.autobill.billsmart.dto.TableResponse
-import com.autobill.billsmart.dto.TableStatusUpdateRequest
 import com.autobill.billsmart.dto.TablesListResponse
 import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.model.enums.TableStatus
@@ -149,12 +148,12 @@ class TablesController(
     fun updateTableStatus(
         @PathVariable restaurantId: Long,
         @PathVariable id: Long,
-        @Valid @RequestBody request: TableStatusUpdateRequest
+        @RequestParam(name = "new_status") newStatus: TableStatus
     ): ResponseEntity<ApiResponse<TableResponse>> {
-        logger.info("PATCH: Update table status - ID: {}, newStatus: {}", id, request.newStatus)
+        logger.info("PATCH: Update table status - ID: {}, newStatus: {}", id, newStatus)
         TenantUtils.assertTenantAccess(restaurantId)
         requireTableBelongsToRestaurant(restaurantId, id)
-        val response = tableService.updateTableStatus(id, request.newStatus)
+        val response = tableService.updateTableStatus(id, newStatus)
         return ResponseEntity.ok(ApiResponse.success(data = response, message = "Table status updated successfully"))
     }
 

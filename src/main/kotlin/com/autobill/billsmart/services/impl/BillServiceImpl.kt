@@ -65,6 +65,14 @@ class BillServiceImpl(
                 AppException.ResourceNotFoundException("Order not found: ${request.orderId}")
             }
 
+        // Validate order belongs to the same restaurant — prevents cross-tenant bill creation
+        val orderRestaurantId = order.restaurant?.restroId
+        if (orderRestaurantId != request.restaurantId) {
+            logger.warn("Cross-tenant bill attempt: orderId={} belongs to restaurant={}, requested restaurantId={}",
+                request.orderId, orderRestaurantId, request.restaurantId)
+            throw AppException.ValidationException("Order ${request.orderId} does not belong to restaurant ${request.restaurantId}")
+        }
+
         // Validate restaurant exists
         val restaurant = restaurantRepository.findById(request.restaurantId)
             .orElseThrow {

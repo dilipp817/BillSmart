@@ -21,6 +21,7 @@ data class TableRequest(
     val capacity: Int,
 
     /** Floor number (1-based). Defaults to 1 for single-floor restaurants. */
+    @field:Positive(message = "Floor must be a positive number (1-based)")
     val floor: Int = 1,
 
     val status: TableStatus? = TableStatus.AVAILABLE
@@ -54,14 +55,6 @@ data class TableResponse(
     val version: Long = 0
 )
 
-/**
- * TableStatusUpdateRequest DTO - Request for status updates
- *
- * Single Responsibility: Only handles status transitions
- */
-data class TableStatusUpdateRequest(
-    val newStatus: TableStatus
-)
 
 /**
  * TableAvailabilityResponse DTO - Response for availability queries
