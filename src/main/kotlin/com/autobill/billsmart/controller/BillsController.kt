@@ -58,7 +58,7 @@ class BillsController(
         val jwtRestaurantId = TenantUtils.getJwtRestaurantId()
 
         val page = when {
-            jwtRestaurantId != null -> billService.getBillsByRestaurant(jwtRestaurantId, pageable)
+            jwtRestaurantId != null -> billService.getBillsByRestaurantAndStatus(jwtRestaurantId, status, pageable)
             status != null          -> billService.getBillsByStatus(status, pageable)
             else                    -> org.springframework.data.domain.Page.empty(pageable)
         }

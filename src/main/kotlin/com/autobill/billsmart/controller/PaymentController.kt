@@ -4,6 +4,7 @@ import com.autobill.billsmart.dto.ApiResponse
 import com.autobill.billsmart.dto.PaymentRequest
 import com.autobill.billsmart.dto.PaymentResponse
 import com.autobill.billsmart.dto.PaymentStatusUpdateRequest
+import com.autobill.billsmart.exception.AppException
 import com.autobill.billsmart.security.TenantUtils
 import com.autobill.billsmart.services.BillService
 import com.autobill.billsmart.services.OrderService
@@ -127,6 +128,8 @@ class PaymentController(
 
             val response = paymentService.createPayment(request)
             ResponseEntity.ok(ApiResponse(success = true, message = "Payment processed successfully", data = response))
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404/400
         } catch (e: Exception) {
             logger.error("Error processing payment", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Payment processing failed"))
@@ -183,6 +186,8 @@ class PaymentController(
             } else {
                 ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse(success = false, message = "Payment not found"))
             }
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404
         } catch (e: Exception) {
             logger.error("Error fetching payment", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error fetching payment"))
@@ -240,15 +245,17 @@ class PaymentController(
 
         return try {
             val pageable: Pageable = PageRequest.of(offset / limit, limit)
-            val payments = paymentService.getPaymentsByBill(billId, pageable)
-            // Ownership: verify the bill belongs to the caller's restaurant
+            // Ownership check BEFORE querying payments — avoid cross-tenant DB query
             val bill = billService.getBillById(billId)
             TenantUtils.assertResourceOwnership(bill?.restaurantId)
+            val payments = paymentService.getPaymentsByBill(billId, pageable)
 
             ResponseEntity.ok(ApiResponse(success = true, data = mapOf(
                 "payments" to payments.content,
                 "meta" to mapOf("total" to payments.totalElements, "limit" to limit, "offset" to offset, "has_more" to !payments.isLast)
             )))
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404
         } catch (e: Exception) {
             logger.error("Error fetching payments for bill", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error fetching payments"))
@@ -277,15 +284,17 @@ class PaymentController(
 
         return try {
             val pageable: Pageable = PageRequest.of(offset / limit, limit)
-            val payments = paymentService.getPaymentsByOrder(orderId, pageable)
-            // Ownership: verify the order belongs to the caller's restaurant
+            // Ownership check BEFORE querying payments — avoid cross-tenant DB query
             val order = orderService.getOrder(orderId)
             TenantUtils.assertResourceOwnership(order?.restaurantId)
+            val payments = paymentService.getPaymentsByOrder(orderId, pageable)
 
             ResponseEntity.ok(ApiResponse(success = true, data = mapOf(
                 "payments" to payments.content,
                 "meta" to mapOf("total" to payments.totalElements, "limit" to limit, "offset" to offset, "has_more" to !payments.isLast)
             )))
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404
         } catch (e: Exception) {
             logger.error("Error fetching payments for order", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error fetching payments"))
@@ -325,6 +334,8 @@ class PaymentController(
 
             val payment = paymentService.updatePaymentStatus(id, request)
             ResponseEntity.ok(ApiResponse(success = true, message = "Payment status updated to ${request.status}", data = payment))
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404
         } catch (e: Exception) {
             logger.error("Error updating payment status", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error updating payment status"))
@@ -358,6 +369,8 @@ class PaymentController(
 
             val payment = paymentService.processPayment(id)
             ResponseEntity.ok(ApiResponse(success = true, message = "Payment processed successfully", data = payment))
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404
         } catch (e: Exception) {
             logger.error("Error processing payment", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error processing payment"))
@@ -390,6 +403,8 @@ class PaymentController(
 
             val payment = paymentService.refundPayment(id)
             ResponseEntity.ok(ApiResponse(success = true, message = "Payment refunded successfully", data = payment))
+        } catch (e: AppException) {
+            throw e  // Let GlobalExceptionHandler return correct 403/404
         } catch (e: Exception) {
             logger.error("Error refunding payment", e)
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse(success = false, message = e.message ?: "Error refunding payment"))

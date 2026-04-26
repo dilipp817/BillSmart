@@ -43,6 +43,16 @@ interface BillService {
     fun getBillsByRestaurant(restaurantId: Long, pageable: Pageable): Page<BillListResponse>
 
     /**
+     * Get bills by restaurant and optional status filter (paginated)
+     *
+     * @param restaurantId restaurant ID
+     * @param status optional bill status filter
+     * @param pageable pagination info
+     * @return page of bills
+     */
+    fun getBillsByRestaurantAndStatus(restaurantId: Long, status: String?, pageable: Pageable): Page<BillListResponse>
+
+    /**
      * Get bills by status (paginated)
      *
      * @param status bill status

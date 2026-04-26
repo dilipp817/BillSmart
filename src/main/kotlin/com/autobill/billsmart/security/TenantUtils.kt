@@ -2,6 +2,7 @@ package com.autobill.billsmart.security
 
 import com.autobill.billsmart.exception.AppException
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 
 /**
  * TenantUtils — Multi-tenant isolation helpers.
@@ -17,6 +18,15 @@ import org.springframework.security.core.context.SecurityContextHolder
 object TenantUtils {
 
     /**
+     * Returns true when the current caller has the ROLE_SUPER_ADMIN authority.
+     * Used to validate that a null restaurantId JWT claim is intentional, not bad data.
+     */
+    fun isSuperAdmin(): Boolean {
+        val auth = SecurityContextHolder.getContext().authentication
+        return auth?.authorities?.contains(SimpleGrantedAuthority("ROLE_SUPER_ADMIN")) == true
+    }
+
+    /**
      * Returns the restaurantId embedded in the current request's JWT, or null
      * if the caller is a super_admin (token has no restaurantId claim).
      */
@@ -30,12 +40,26 @@ object TenantUtils {
      * restaurantId does not match [pathRestaurantId].
      *
      * No-op when:
-     * - the JWT restaurantId is null  (super_admin — may access all tenants)
+     * - the JWT restaurantId is null AND the caller has ROLE_SUPER_ADMIN
      * - the JWT restaurantId equals [pathRestaurantId]  (normal user, own tenant)
+     *
+     * Throws 403 when:
+     * - the JWT restaurantId is null but the caller is NOT ROLE_SUPER_ADMIN
+     *   (guards against bad data / migration issues giving unintended cross-tenant access)
+     * - the JWT restaurantId does not match [pathRestaurantId]
      */
     fun assertTenantAccess(pathRestaurantId: Long) {
         val jwtRestaurantId = getJwtRestaurantId()
-        if (jwtRestaurantId != null && jwtRestaurantId != pathRestaurantId) {
+        if (jwtRestaurantId == null) {
+            // null restaurantId is only valid for super_admin — verify the role explicitly
+            if (!isSuperAdmin()) {
+                throw AppException.ForbiddenException(
+                    "Access denied: missing restaurant association"
+                )
+            }
+            return  // super_admin — allowed to access any tenant
+        }
+        if (jwtRestaurantId != pathRestaurantId) {
             throw AppException.ForbiddenException(
                 "Access denied: you do not belong to restaurant $pathRestaurantId"
             )

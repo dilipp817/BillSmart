@@ -135,6 +135,24 @@ class BillServiceImpl(
     }
 
     @Transactional(readOnly = true)
+    override fun getBillsByRestaurantAndStatus(restaurantId: Long, status: String?, pageable: Pageable): Page<BillListResponse> {
+        logger.debug("Fetching bills for restaurant: {} with status: {}", restaurantId, status)
+
+        if (!restaurantRepository.existsById(restaurantId)) {
+            throw AppException.ResourceNotFoundException("Restaurant not found: $restaurantId")
+        }
+
+        return if (status != null) {
+            if (!isValidBillStatus(status)) throw AppException.ValidationException("Invalid bill status: $status")
+            billRepository.findByRestaurantIdAndStatusOrderByCreatedAtDesc(restaurantId, status, pageable)
+                .map { billMapper.toListResponse(it) }
+        } else {
+            billRepository.findByRestaurantIdOrderByCreatedAtDesc(restaurantId, pageable)
+                .map { billMapper.toListResponse(it) }
+        }
+    }
+
+    @Transactional(readOnly = true)
     override fun getBillsByStatus(status: String, pageable: Pageable): Page<BillListResponse> {
         logger.debug("Fetching bills by status: {}", status)
 

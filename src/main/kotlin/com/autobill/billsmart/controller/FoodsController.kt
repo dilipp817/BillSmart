@@ -11,7 +11,6 @@ import jakarta.validation.constraints.Positive
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 
 /**
@@ -184,7 +183,7 @@ class FoodsController(
             // the JWT authentication details by JwtAuthenticationFilter.
             // Super-admin tokens have null restaurantId — they must pass restaurant_id explicitly.
             val effectiveRestaurantId: Long? = restaurantId
-                ?: (SecurityContextHolder.getContext().authentication?.details as? Long)
+                ?: TenantUtils.getJwtRestaurantId()
 
             if (effectiveRestaurantId == null) {
                 return ResponseEntity.badRequest().body(
