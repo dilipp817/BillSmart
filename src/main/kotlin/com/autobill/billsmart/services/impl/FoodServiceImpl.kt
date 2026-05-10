@@ -29,6 +29,23 @@ class FoodServiceImpl(
         return foodMapper.toResponse(saved)
     }
 
+    @Transactional
+    override fun updateFood(id: Long, req: FoodRequest): FoodResponse {
+        val food = foodRepository.findByIdAndIsDeletedFalse(id)
+            ?: throw AppException.ResourceNotFoundException("Food not found with ID: $id")
+
+        food.name = req.name
+        food.price = req.price
+        food.description = req.description
+        food.imageUrl = req.imageUrl
+        food.categoryId = req.categoryId
+        food.isVegetarian = req.isVegetarian
+        food.isSpicy = req.isSpicy
+
+        val saved = foodRepository.save(food)
+        return foodMapper.toResponse(saved)
+    }
+
     @Transactional(readOnly = true)
     override fun getAllFoods(restroId: Long): List<FoodResponse> {
         restaurantRepository.findById(restroId).orElse(null)

@@ -342,6 +342,30 @@ class FoodsController(
     }
 
     /**
+     * PUT /api/v1/foods/:id
+     * Update an existing food item.
+     * Only ADMIN role can call this (enforced in SecurityConfig).
+     *
+     * @param id Food ID
+     * @param request Updated food details
+     */
+    @PutMapping("/{id}")
+    fun updateFood(
+        @PathVariable @Positive id: Long,
+        @Valid @RequestBody request: FoodRequest
+    ): ResponseEntity<ApiResponse<FoodResponse>> {
+        log.info("PUT: Update food ID: {}", id)
+
+        // Ownership check: verify the food belongs to the caller's restaurant
+        val existing = foodService.getFood(id)
+            ?: throw AppException.ResourceNotFoundException("Food not found with ID: $id")
+        TenantUtils.assertResourceOwnership(existing.restaurantId)
+
+        val updated = foodService.updateFood(id, request)
+        return ResponseEntity.ok(ApiResponse.success(updated, "Food updated successfully"))
+    }
+
+    /**
      * DELETE /api/v1/foods/:id
      * Delete a food item by ID
      *
