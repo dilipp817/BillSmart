@@ -23,6 +23,7 @@ build/
 .idea/gradle/
 .idea/libraries/
 .idea/caches/
+.idea/copilotDiffState.xml
 out/
 *.iws
 *.iml
